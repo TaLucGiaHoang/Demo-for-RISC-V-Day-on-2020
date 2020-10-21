@@ -173,6 +173,7 @@ target_include_directories(
 	"${AFR_3RDPARTY_DIR}/pkcs11"
 	"${AFR_DEMOS_DIR}/dev_mode_key_provisioning/include"
         "${secure_elements_dir}/lib"
+        "${board_dir}/config_files"
 )
 
 # SHC added
