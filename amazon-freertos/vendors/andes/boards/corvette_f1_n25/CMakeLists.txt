@@ -42,7 +42,7 @@ if(AFR_IS_TESTING)
         -D__freertos_irq_stack_top=_stack
         -DUNITY_INCLUDE_CONFIG_H
         -DAMAZON_FREERTOS_ENABLE_UNIT_TESTS
-        -DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"
+        #-DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"
         -DCFG_MAKEFILE
         -DCFG_XIP
         -DCFG_CACHE_ENABLE
@@ -54,13 +54,26 @@ else()
         INTERFACE $<$<COMPILE_LANGUAGE:C>:${compiler_defined_symbols}>
         -DportasmHANDLE_INTERRUPT=FreeRTOS_IRQ_handler
         -D__freertos_irq_stack_top=_stack
-        -DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"
+        #-DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"
         -DCFG_MAKEFILE
         -DCFG_XIP
         -DCFG_CACHE_ENABLE
         -DCFG_FLASHEXEC
     )
 endif()
+
+
+target_compile_definitions(
+    AFR::compiler::mcu_port
+    INTERFACE $<$<COMPILE_LANGUAGE:C>:${compiler_defined_symbols}>
+    ## predefined macro used for atecc608a lib
+    -DMBEDTLS_CONFIG_FILE=\"aws_mbedtls_config.h\"
+    # use CONFIG_MEDTLS_USE_AFR_MEMORY macro for iot_crypto.c V1.0.8 and above
+    #-DCONFIG_MEDTLS_USE_AFR_MEMORY
+    -D__free_rtos__
+    -D_CRT_SECURE_NO_WARNINGS
+    -DATCA_NO_HEAP
+)
 
 target_compile_definitions(
     AFR::compiler::mcu_port

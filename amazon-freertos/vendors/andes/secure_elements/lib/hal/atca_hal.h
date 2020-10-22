@@ -32,8 +32,8 @@
 #include "atca_config.h"
 #include "atca_status.h"
 #include "atca_iface.h"
-#include "atca_start_config.h"
-#include "atca_start_iface.h"
+//#include "atca_start_config.h"
+//#include "atca_start_iface.h"
 
 /** \defgroup hal_ Hardware abstraction layer (hal_)
  *

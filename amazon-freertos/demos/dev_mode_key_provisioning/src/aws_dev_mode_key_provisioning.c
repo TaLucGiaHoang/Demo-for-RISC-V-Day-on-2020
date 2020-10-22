@@ -1083,7 +1083,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
     CK_BBOOL xKeyPairGenerationMode = CK_FALSE;
 
     xResult = C_GetFunctionList( &pxFunctionList );
-
+#if 1
     #if ( pkcs11configIMPORT_PRIVATE_KEYS_SUPPORTED == 1 )
 
         /* Attempt to clean-up old crypto objects, but only if private key import is
@@ -1102,26 +1102,28 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
         }
     #endif /* if ( pkcs11configIMPORT_PRIVATE_KEYS_SUPPORTED == 1 ) */
 
-    #if ( pkcs11configIMPORT_PRIVATE_KEYS_SUPPORTED == 1 )
-        /* If a client certificate has been provided by the caller, attempt to
-         * import it. */
-        if( xResult == CKR_OK )
-        {
-            xResult = xProvisionCertificate( xSession,
-                                             pxParams->pucClientCertificate,
-                                             pxParams->ulClientCertificateLength,
-                                             ( uint8_t * ) pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS,
-                                             &xObject );
+    /* If a client certificate has been provided by the caller, attempt to
+     * import it. */
+    if( ( xResult == CKR_OK ) && ( NULL != pxParams->pucClientCertificate ) )
+    {
+        xResult = xProvisionCertificate( xSession,
+                                         pxParams->pucClientCertificate,
+                                         pxParams->ulClientCertificateLength,
+                                         ( uint8_t * ) pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS,
+                                         &xObject );
+        vLoggingPrintf("  xProvisionCertificate %x\r\n", xResult);
 
-            if( ( xResult != CKR_OK ) || ( xObject == CK_INVALID_HANDLE ) )
-            {
-                configPRINTF( ( "ERROR: Failed to provision device certificate. %d \r\n", xResult ) );
-            }
+        if( ( xResult != CKR_OK ) || ( xObject == CK_INVALID_HANDLE ) )
+        {
+            configPRINTF( ( "ERROR: Failed to provision device certificate. %d \r\n", xResult ) );
         }
+    }
+
+    #if ( pkcs11configIMPORT_PRIVATE_KEYS_SUPPORTED == 1 )
 
         /* If this application supports importing private keys, and if a private
          * key has been provided by the caller, attempt to import it. */
-        if( xResult == CKR_OK )
+        if( ( xResult == CKR_OK ) && ( NULL != pxParams->pucClientPrivateKey ) )
         {
             xResult = xProvisionPrivateKey( xSession,
                                             pxParams->pucClientPrivateKey,
@@ -1131,7 +1133,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
 
             if( ( xResult != CKR_OK ) || ( xObject == CK_INVALID_HANDLE ) )
             {
-                configPRINTF( ( "ERROR: Failed to provision device private key. %d \r\n", xResult ) );
+                configPRINTF( ( "ERROR: Failed to provision device private key with status %d.\r\n", xResult ) );
             }
             else
             {
@@ -1167,6 +1169,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
     {
         xResult = prvGetProvisionedState( xSession,
                                           &xProvisionedState );
+        vLoggingPrintf("  prvGetProvisionedState %x\r\n", xResult);
 
         if( ( CK_INVALID_HANDLE == xProvisionedState.xPrivateKey ) ||
             ( CK_INVALID_HANDLE == xProvisionedState.xPublicKey ) ||
@@ -1180,7 +1183,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
          * couldn't be read, try to generate new ones below. */
         xResult = CKR_OK;
     }
-
+#endif
     #if ( 1 == keyprovisioningFORCE_GENERATE_NEW_KEY_PAIR )
         xKeyPairGenerationMode = CK_TRUE;
     #endif
@@ -1193,6 +1196,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
                                                ( uint8_t * ) pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS,
                                                &xProvisionedState.xPrivateKey,
                                                &xProvisionedState.xPublicKey );
+        vLoggingPrintf("xProvisionGenerateKeyPairEC: %x", xResult);
 
         if( CKR_OK == xResult )
         {
@@ -1202,7 +1206,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
                 vPortFree( xProvisionedState.pucDerPublicKey );
                 xProvisionedState.pucDerPublicKey = NULL;
             }
-
+vLoggingPrintf("xProvisionedState.pucDerPublicKey: %s", xProvisionedState.pucDerPublicKey);
             /* Get the bytes of the new public key. */
             prvExportPublicKey( xSession,
                                 xProvisionedState.xPublicKey,
@@ -1217,6 +1221,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
               ( CK_INVALID_HANDLE == xProvisionedState.xPublicKey ) ) )
         {
             xResult = CKR_KEY_HANDLE_INVALID;
+            vLoggingPrintf("aws_dev_mode_key_ %d: CKR_KEY_HANDLE_INVALID\r\n", __LINE__);
         }
     }
 
@@ -1283,11 +1288,13 @@ CK_RV xInitializePkcs11Token()
     if( xResult == CKR_OK )
     {
         xResult = xInitializePKCS11();
+        vLoggingPrintf("  xInitializePKCS11 %x\r\n", xResult);
     }
 
     if( ( xResult == CKR_OK ) || ( xResult == CKR_CRYPTOKI_ALREADY_INITIALIZED ) )
     {
         xResult = xGetSlotList( &pxSlotId, &xSlotCount );
+        vLoggingPrintf("  xGetSlotList %x\r\n", xResult);
     }
 
     if( xResult == CKR_OK )
@@ -1303,6 +1310,7 @@ CK_RV xInitializePkcs11Token()
              * TODO: Consider a define here instead.
              */
             xResult = pxFunctionList->C_GetTokenInfo( pxSlotId[ 0 ], pxTokenInfo );
+            vLoggingPrintf("  pxFunctionList->C_GetTokenInfo %x\r\n", xResult);
         }
         else
         {
@@ -1322,6 +1330,7 @@ CK_RV xInitializePkcs11Token()
                                                ( CK_UTF8CHAR_PTR ) configPKCS11_DEFAULT_USER_PIN,
                                                sizeof( configPKCS11_DEFAULT_USER_PIN ) - 1,
                                                ( CK_UTF8CHAR_PTR ) "FreeRTOS" );
+        vLoggingPrintf("  pxFunctionList->C_InitToken %x\r\n", xResult);
     }
 
     if( pxTokenInfo != NULL )
@@ -1346,18 +1355,20 @@ void vAlternateKeyProvisioning( ProvisioningParams_t * xParams )
     CK_SESSION_HANDLE xSession = 0;
 
     xResult = C_GetFunctionList( &pxFunctionList );
-    vLoggingPrintf("vAlternateKeyProvisioning: C_GetFunctionList %x\r\n", xResult);
+
     /* Initialize the PKCS Module */
     if( xResult == CKR_OK )
     {
+    	vLoggingPrintf("xInitializePkcs11Token...\r\n");
         xResult = xInitializePkcs11Token();
-        vLoggingPrintf("vAlternateKeyProvisioning: xInitializePkcs11Token %x\r\n", xResult);
+        vLoggingPrintf("xInitializePkcs11Token %x\r\n", xResult);
     }
 
     if( xResult == CKR_OK )
     {
+    	vLoggingPrintf("xInitializePkcs11Session...\r\n");
         xResult = xInitializePkcs11Session( &xSession );
-        vLoggingPrintf("vAlternateKeyProvisioning: xInitializePkcs11Session %x\r\n", xResult);
+        vLoggingPrintf("xInitializePkcs11Session %x\r\n", xResult);
     }
 
     if( xResult == CKR_OK )
@@ -1365,12 +1376,13 @@ void vAlternateKeyProvisioning( ProvisioningParams_t * xParams )
         // #if ( pkcs11configIMPORT_PRIVATE_KEYS_SUPPORTED == 1 )
             // xDestroyCredentials( xSession );
         // #endif
-
+    	vLoggingPrintf("xProvisionDevice...\r\n");
         xResult = xProvisionDevice( xSession, xParams );
-        vLoggingPrintf("vAlternateKeyProvisioning: C_GetFunctionList %x\r\n", xResult);
+        vLoggingPrintf("xProvisionDevice %x\r\n", xResult);
 
         pxFunctionList->C_CloseSession( xSession );
     }
+    vLoggingPrintf("vAlternateKeyProvisioning done\r\n");
 }
 /*-----------------------------------------------------------*/
 
@@ -1394,7 +1406,7 @@ void vDevModeKeyProvisioning( void )
     else
     {
         xParams.pucJITPCertificate = NULL;
-        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucJITPCertificate = NULL\r\n" ) );
+//        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucJITPCertificate = NULL\r\n" ) );
     }
 
     /* The hard-coded client certificate and private key can be useful for
@@ -1410,7 +1422,7 @@ void vDevModeKeyProvisioning( void )
     else
     {
         xParams.pucClientPrivateKey = NULL;
-        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucClientPrivateKey = NULL\r\n" ) );
+//        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucClientPrivateKey = NULL\r\n" ) );
     }
 
     if( ( NULL != xParams.pucClientCertificate ) &&
@@ -1423,7 +1435,7 @@ void vDevModeKeyProvisioning( void )
     else
     {
         xParams.pucClientCertificate = NULL;
-        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucClientCertificate = NULL\r\n" ) );
+//        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucClientCertificate = NULL\r\n" ) );
     }
 
     vAlternateKeyProvisioning( &xParams );

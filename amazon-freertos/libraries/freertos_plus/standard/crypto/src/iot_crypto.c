@@ -29,7 +29,13 @@
 #include "iot_crypto.h"
 
 /* mbedTLS includes. */
-#include "mbedtls/config.h"
+
+#if !defined( MBEDTLS_CONFIG_FILE )
+    #include "mbedtls/config.h"
+#else
+    #include MBEDTLS_CONFIG_FILE
+#endif
+
 #include "mbedtls/platform.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha1.h"
@@ -77,7 +83,25 @@ static void * prvCalloc( size_t xNmemb,
     return pvNew;
 }
 
+/* If mbedTLS is using AFR managed memory, it needs access to an implementation of calloc. */
+//#ifdef CONFIG_MEDTLS_USE_AFR_MEMORY
 
+/**
+ * @brief Implements libc calloc semantics using the FreeRTOS heap
+ */
+    void * pvCalloc( size_t xNumElements,
+                     size_t xSize )
+    {
+        void * pvNew = pvPortMalloc( xNumElements * xSize );
+
+        if( NULL != pvNew )
+        {
+            memset( pvNew, 0, xNumElements * xSize );
+        }
+
+        return pvNew;
+    }
+//#endif /* ifdef CONFIG_MEDTLS_USE_AFR_MEMORY */
 /*-----------------------------------------------------------*/
 /*--------- mbedTLS threading functions for FreeRTOS --------*/
 /*--------------- See MBEDTLS_THREADING_ALT -----------------*/

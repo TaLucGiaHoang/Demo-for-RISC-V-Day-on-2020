@@ -31,6 +31,14 @@
 #include "semphr.h"
 #include "task.h"
 
+#if 0 // debug log
+extern void vLoggingPrint( const char * pcFormat );
+extern void vLoggingPrintf( const char * pcFormat, ... );
+#define DEBUG_LOG(x) vLoggingPrint(__func__);vLoggingPrint(": ");vLoggingPrint(x)
+#else
+#define DEBUG_LOG(x)
+#endif
+
 #ifndef ATCA_MUTEX_TIMEOUT
 #define ATCA_MUTEX_TIMEOUT  portMAX_DELAY
 #endif
@@ -42,7 +50,7 @@
  * These methods define the hardware abstraction layer for communicating with a CryptoAuth device
  *
    @{ */
-
+#include "atca_config.h"
 #ifdef ATCA_USE_RTOS_TIMER
 /**
  * \brief This function delays for a number of milliseconds.

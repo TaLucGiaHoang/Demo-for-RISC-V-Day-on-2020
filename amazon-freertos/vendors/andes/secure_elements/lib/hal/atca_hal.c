@@ -204,7 +204,10 @@ ATCA_STATUS hal_check_wake(const uint8_t* response, int response_size)
 {
     const uint8_t expected_response[4] = { 0x04, 0x11, 0x33, 0x43 };
     uint8_t selftest_fail_resp[4] = { 0x04, 0x07, 0xC4, 0x40 };
-
+#if 1 //debug
+extern void vLoggingPrintf( const char * pcFormat, ... );
+    vLoggingPrintf("hal_check_wake %x %x %x %x\r\n", response[0], response[1], response[2], response[3]);
+#endif
     if (response_size != 4)
     {
         return ATCA_WAKE_FAILED;

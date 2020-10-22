@@ -1,6 +1,6 @@
 /*
- * Amazon FreeRTOS V1.4.8
- * Copyright (C) 2018 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS V1.1.4
+ * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -28,12 +28,13 @@
  * @brief PCKS#11 config options.
  */
 
-
 #ifndef _AWS_PKCS11_CONFIG_H_
 #define _AWS_PKCS11_CONFIG_H_
 
 /* A non-standard version of C_INITIALIZE should be used by this port. */
 /* #define pkcs11configC_INITIALIZE_ALT */
+
+extern const char * pcPkcs11GetThingName(void);
 
 /**
  * @brief PKCS #11 default user PIN.
@@ -43,8 +44,12 @@
  * protections. However, since typical microcontroller applications lack one or
  * both of those, the user PIN is assumed to be used herein for interoperability
  * purposes only, and not as a security feature.
+ *
+ * Note: Do not cast this to a pointer! The library calls sizeof to get the length
+ * of this string.
  */
-#define configPKCS11_DEFAULT_USER_PIN    "0000"
+#define configPKCS11_DEFAULT_USER_PIN    "00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF"
+//#define configPKCS11_DEFAULT_USER_PIN    "0000"
 
 /**
  * @brief Maximum length (in characters) for a PKCS #11 CKA_LABEL
@@ -65,6 +70,11 @@
  * is implemented in the common PKCS #11 layer.
  */
 #define pkcs11configPAL_DESTROY_SUPPORTED                  0
+
+/**
+ * @brief Set to 1 if importing device private key via C_CreateObject is supported.  0 if not.
+ */
+#define pkcs11configIMPORT_PRIVATE_KEYS_SUPPORTED          0
 
 /**
  * @brief Set to 1 if OTA image verification via PKCS #11 module is supported.

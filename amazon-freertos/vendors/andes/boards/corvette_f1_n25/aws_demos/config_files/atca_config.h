@@ -51,5 +51,5 @@
 /** Use RTOS timers (i.e. delays that yield) */
 #define ATCA_USE_RTOS_TIMER
 
-
+//#define __free_rtos__ // Use -D__free_rtos__ in Makefile or un-comment this line
 #endif

@@ -163,7 +163,7 @@ extern void vLoggingPrint( const char * pcMessage );
 
 /* Set to 1 to prepend each log message with a message number, the task name,
  * and a time stamp. */
-#define configLOGGING_INCLUDE_TIME_AND_TASK_NAME	1
+#define configLOGGING_INCLUDE_TIME_AND_TASK_NAME	0
 
 /* The priority at which the tick interrupt runs.  This should probably be kept at 1. */
 #define configKERNEL_INTERRUPT_PRIORITY			1
