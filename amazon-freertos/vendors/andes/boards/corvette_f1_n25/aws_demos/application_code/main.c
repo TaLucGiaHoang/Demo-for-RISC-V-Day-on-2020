@@ -317,8 +317,8 @@ void vApplicationDaemonTaskStartupHook( void )
     // test shc
     if( SYSTEM_Init() == pdPASS )//&& xTasksAlreadyCreated == pdFALSE )
     {
-        /* Connect to the Wi-Fi before running the tests. */
-        prvWifiConnect();
+//        /* Connect to the Wi-Fi before running the tests. */
+//        prvWifiConnect();
         /* A simple example to demonstrate key and certificate provisioning in
          * microcontroller flash using PKCS#11 interface. This should be replaced
          * by production ready key provisioning mechanism. */
