@@ -40,10 +40,8 @@
 							</tool>
 							<tool id="tool.nds32le-elf-newlib-v5.c.compiler.base.826106847" name="Andes C Compiler" superClass="tool.nds32le-elf-newlib-v5.c.compiler.base">
 								<option id="nds.c.compiler.option.include.paths.582400514" name="Include paths (-I)" superClass="nds.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/bsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/bsp/ae250}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/bsp/lib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/demo}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/aws_demo/vendors/andes/boards/corvette_f1_n25/aws_demos/config_files}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/aws_demo/freertos_kernel/include}&quot;"/>
 								</option>
 								<option id="nds.c.compiler.option.debugging.level.1745637919" name="Debug Level" superClass="nds.c.compiler.option.debugging.level" value="nds.c.debugging.level.max" valueType="enumerated"/>
 								<inputType id="tool.nds.c.compiler.input.1703513748" superClass="tool.nds.c.compiler.input"/>

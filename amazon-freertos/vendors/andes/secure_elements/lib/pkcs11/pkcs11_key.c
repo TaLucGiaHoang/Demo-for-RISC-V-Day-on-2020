@@ -615,6 +615,7 @@ CK_RV pkcs11_key_generate_pair
     CK_OBJECT_HANDLE_PTR phPrivateKey
 )
 {
+	vLoggingPrintf("    pkcs11_key_generate_pair...\r\n");
     CK_ATTRIBUTE_PTR pName = NULL;
     pkcs11_lib_ctx_ptr pLibCtx;
     pkcs11_session_ctx_ptr pSession;
@@ -624,6 +625,7 @@ CK_RV pkcs11_key_generate_pair
     CK_RV rv = CKR_OK;
 
     rv = pkcs11_init_check(&pLibCtx, FALSE);
+//    vLoggingPrintf("    pkcs11_init_check %x\r\n", rv);
     if (rv)
     {
         return rv;
@@ -633,10 +635,12 @@ CK_RV pkcs11_key_generate_pair
         !pPrivateKeyTemplate || !ulPrivateKeyAttributeCount ||
         !phPublicKey || !phPrivateKey)
     {
+    	vLoggingPrintf("    Error:pkcs11_key_generate_pair %x CKR_ARGUMENTS_BAD\r\n", CKR_ARGUMENTS_BAD);
         return CKR_ARGUMENTS_BAD;
     }
 
     rv = pkcs11_session_check(&pSession, hSession);
+//    vLoggingPrintf("    pkcs11_session_check %x\r\n", rv);
     if (rv)
     {
         return rv;
@@ -646,6 +650,7 @@ CK_RV pkcs11_key_generate_pair
 
     if (CKM_EC_KEY_PAIR_GEN != pMechanism->mechanism)
     {
+    	vLoggingPrintf("    Error:pkcs11_key_generate_pair %x CKR_MECHANISM_INVALID\r\n", CKR_MECHANISM_INVALID);
         return CKR_MECHANISM_INVALID;
     }
 
@@ -664,6 +669,7 @@ CK_RV pkcs11_key_generate_pair
 
     if (!pName || pName->ulValueLen > PKCS11_MAX_LABEL_SIZE)
     {
+    	vLoggingPrintf("    Error:pkcs11_key_generate_pair %x CKR_TEMPLATE_INCONSISTENT\r\n", CKR_TEMPLATE_INCONSISTENT);
         return CKR_TEMPLATE_INCONSISTENT;
     }
 
@@ -672,11 +678,13 @@ CK_RV pkcs11_key_generate_pair
     if (CKR_OK == rv)
     {
         rv = pkcs11_object_alloc(&pPrivate);
+//        vLoggingPrintf("    pkcs11_object_alloc(&pPrivate) %x\r\n", rv);
     }
 
     if (CKR_OK == rv)
     {
         rv = pkcs11_object_alloc(&pPublic);
+//        vLoggingPrintf("    pkcs11_object_alloc(&pPublic) %x\r\n", rv);
     }
 
     if (CKR_OK == rv)
@@ -691,6 +699,7 @@ CK_RV pkcs11_key_generate_pair
     {
         pPrivate->class_id = CKO_PRIVATE_KEY;
         rv = pkcs11_config_key(pLibCtx, pSession->slot, pPrivate, pName);
+        vLoggingPrintf("    pkcs11_config_key %x\r\n", rv);
     }
 
     if (CKR_OK == rv)
@@ -705,7 +714,10 @@ CK_RV pkcs11_key_generate_pair
         pPublic->size = 64;
         pPublic->config = &((pkcs11_slot_ctx_ptr)pSession->slot)->cfg_zone;
 
+        vLoggingPrintf("    pkcs11_util_convert_rv(atcab_genkey( %x )\r\n", rv);
         rv = pkcs11_util_convert_rv(atcab_genkey(pPrivate->slot, NULL));
+        rv = 0; // test
+        vLoggingPrintf("    pkcs11_util_convert_rv(atcab_genkey( %x ) %x\r\n", rv);
     }
 
     if (CKR_OK == rv)
@@ -724,7 +736,7 @@ CK_RV pkcs11_key_generate_pair
             pkcs11_object_free(pPublic);
         }
     }
-
+    vLoggingPrintf("    pkcs11_key_generate_pair done %x\r\n", rv);
     return rv;
 }
 

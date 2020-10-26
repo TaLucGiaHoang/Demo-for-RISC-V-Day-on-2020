@@ -141,16 +141,131 @@ extern int nv_seed_read_func( unsigned char *buf, size_t buf_len );
 extern int nv_seed_write_func( unsigned char *buf, size_t buf_len );
 extern void Init_PKCS11();
 
-static int uart_puts(UART_RegDef *UARTx, const char *s)
+/*-----------------------------------------------------------*/
+#include "atca_device.h"
+#include "atca_iface.h"
+#include "hal/atca_hal.h"
+#include "basic/atca_basic.h"
+#include "basic/atca_basic.h"
+static ATCADevice _gDevice_test = NULL;
+static struct atca_command g_atcab_command_test;
+static struct atca_iface g_atcab_iface_test;
+static struct atca_device g_atcab_device_test;
+
+void testATCA( void )
 {
-	int len = 0;
-	while (*s) {
-		uart_send_byte(UARTx, *s);
-		s++;
-		len++;
+	vLoggingPrintf("\r\ntestATCA\r\n");
+	ATCA_STATUS status = ATCA_GEN_FAIL;
+
+	ATCAIfaceCfg interface_config = {
+			.iface_type = 0x0,
+			.devtype = ATECC608A,
+			.atcai2c.slave_address = ATCA_I2C_ECC_ADDRESS,
+			.atcai2c.bus = 0,
+			.atcai2c.baud = 400000,
+			.wake_delay = 1500,
+			.rx_retries = 20,
+			.cfg_data = 0x0,
+	};
+	ATCAIfaceCfg *cfg = &interface_config;
+
+	g_atcab_iface_test.mType = ATCA_I2C_IFACE;
+	g_atcab_iface_test.mIfaceCFG = &interface_config;
+
+	cfg->devtype = ATECC608A;
+
+	g_atcab_command_test.dt = ATECC608A;
+	g_atcab_command_test.clock_divider = 0;
+
+	// atcab_init(ATCAIfaceCfg *cfg)
+    g_atcab_device_test.mCommands = &g_atcab_command_test;
+    g_atcab_device_test.mIface = &g_atcab_iface_test;
+    status = initATCADevice(cfg, &g_atcab_device_test);
+    vLoggingPrintf("initATCADevice %x\r\n", status);
+    if (status != ATCA_SUCCESS)
+    {
+    	vLoggingPrintf("initATCADevice returns %x\r\n", status);
+    }
+    _gDevice_test = &g_atcab_device_test;
+
+    // set clock manually
+    _gDevice_test->mCommands->clock_divider &= ATCA_CHIPMODE_CLOCK_DIV_MASK;
+
+
+#if 0 // test hal_
+    if (cfg->devtype == ATECC608A)
+    {
+    	ATCADevice ca_dev = &g_atcab_device_test;
+        if ((status = atwake(ca_dev->mIface)) != ATCA_SUCCESS)
+        {
+        	vLoggingPrintf("atwake returns %x\r\n", status);
+        }
+//        if ((status = atsleep(ca_dev->mIface)) != ATCA_SUCCESS)
+//        {
+//        	vLoggingPrintf("atsleep returns %x\r\n", status);
+//        }
+//        vTaskDelay( (TickType_t) 1000 );
+//        if ((status = atwake(ca_dev->mIface)) != ATCA_SUCCESS)
+//        {
+//        	vLoggingPrintf("atwake returns %x\r\n", status);
+//        }
+//
+//
+//        if ((status = atidle(ca_dev->mIface)) != ATCA_SUCCESS)
+//        {
+//        	vLoggingPrintf("atidle returns %x\r\n", status);
+//        }
+        vTaskDelay( (TickType_t) 1000 );
+    }
+#endif
+
+#if 0
+    //
+    vLoggingPrintf("\r\nTest atcab_init\r\n");
+    int retries = 2;
+    do
+    {
+        /* If a PKCS11 was killed an left the device in the idle state then
+           starting up again will require the device to go back to a known state
+           that is accomplished here by retrying the initalization */
+        status = atcab_init(cfg);
+        vLoggingPrintf("atcab_init returns %x\r\n", status);
+    }
+    while (retries-- && status);
+
+    // Test atcab_genkey
+    uint8_t public_key[64];
+    memset(public_key, 0x44, 64); // mark the key with bogus data
+    uint8_t slot_id = 0;
+
+    vLoggingPrintf("\r\nTest atcab_genkey slot %d\r\n", slot_id);
+    bool is_locked = false;
+    status = atcab_is_locked( slot_id, &is_locked);
+    vLoggingPrintf("atcab_is_locked %x\r\n", status);
+    if (!is_locked)
+    	vLoggingPrintf("Config zone must be locked for this test.\r\n");
+
+    vLoggingPrintf("atcab_genkey\r\n");
+    status = atcab_genkey(slot_id, public_key);
+    vLoggingPrintf("atcab_genkey returns %x\r\n", status);
+    if(status == ATCA_SUCCESS)
+    {
+    	vLoggingPrintf("<public_key> \r\n%s\r\n<public_key>\r\n", public_key);
+    }
+    vTaskDelay( (TickType_t) 1000 );
+
+    vLoggingPrintf("atcab_get_pubkey\r\n");
+    status = atcab_get_pubkey(slot_id, public_key);
+    vLoggingPrintf("atcab_get_pubkey returns %x\r\n", status);
+	if(status == ATCA_SUCCESS)
+	{
+		vLoggingPrintf("<public_key> \r\n%s\r\n<public_key>\r\n", public_key);
+		vLoggingPrintf(" [%x %x %x %x]\r\n", public_key[0], public_key[1], public_key[2], public_key[3]);
 	}
-	return len;
+#endif
+
 }
+/*-----------------------------------------------------------*/
 /**
  * @brief Application runtime entry point.
  */
@@ -161,7 +276,6 @@ int main( void )
 	 DEV_GPIO->DATAOUT = (1 << 8) | (1 << 5);    // Light up LED1 and LED4
 	 DEV_GPIO->DATAOUT |= (1 << 6) | (1 << 7);    // Light up LED1 and LED4
 
-//	 uart_puts(DEV_UART1, "aaaa 1\r\n");
    /* Perform any hardware initialization that does not require the RTOS to be
     * running.  */
    prvMiscInitialization();
@@ -189,14 +303,12 @@ int main( void )
 static void prvMiscInitialization( void )
 {
     prvSetupHardware();
-    configPRINT_STRING("Test Message");//vLoggingPrintf
 }
 
 /*-----------------------------------------------------------*/
 
 void vApplicationDaemonTaskStartupHook( void )
-{configPRINT_STRING( "vApplicationDaemonTaskStartupHook\r\n" );
-vLoggingPrintf("vLoggingPrintf\r\n");
+{
 #if 0 // original code
     Init_PKCS11();
     mbedtls_platform_set_nv_seed( &nv_seed_read_func, &nv_seed_write_func);
@@ -205,14 +317,14 @@ vLoggingPrintf("vLoggingPrintf\r\n");
     // test shc
     if( SYSTEM_Init() == pdPASS )//&& xTasksAlreadyCreated == pdFALSE )
     {
-//            /* Connect to the Wi-Fi before running the tests. */
-//            prvWifiConnect();
-    	vLoggingPrintf("vDevModeKeyProvisioning\r\n");
+        /* Connect to the Wi-Fi before running the tests. */
+        prvWifiConnect();
         /* A simple example to demonstrate key and certificate provisioning in
          * microcontroller flash using PKCS#11 interface. This should be replaced
          * by production ready key provisioning mechanism. */
         vDevModeKeyProvisioning();
-
+//
+//    	testATCA(); // SHC test atecc608a lib
 //        /* Start the demo tasks. */
 //        DEMO_RUNNER_RunDemos();
     }

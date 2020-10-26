@@ -1,6 +1,6 @@
 /*
- * Amazon FreeRTOS V201908.00
- * Copyright (C) 2018 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS V202002.00
+ * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -26,10 +26,10 @@
 
 /**
  * @file aws_dev_mode_key_provisioning.c
- * @brief Simple key provisioning example using pkcs#11
+ * @brief Simple key provisioning example using PKCS #11
  *
  * A simple example to demonstrate key and certificate provisioning in
- * flash using PKCS#11 interface. This should be replaced
+ * flash using PKCS #11 interface. This should be replaced
  * by production ready key provisioning mechanism.
  */
 
@@ -43,8 +43,8 @@
 #include "semphr.h"
 
 /* PKCS#11 includes. */
-#include "iot_pkcs11.h"
 #include "iot_pkcs11_config.h"
+#include "iot_pkcs11.h"
 
 /* Client credential includes. */
 #include "aws_clientcredential.h"
@@ -73,6 +73,30 @@ extern void vLoggingPrint( const char * pcFormat );
 
 /* Internal structure for parsing RSA keys. */
 
+/* Length parameters for importing RSA-2048 private keys. */
+#define MODULUS_LENGTH        pkcs11RSA_2048_MODULUS_BITS / 8
+#define E_LENGTH              3
+#define D_LENGTH              pkcs11RSA_2048_MODULUS_BITS / 8
+#define PRIME_1_LENGTH        128
+#define PRIME_2_LENGTH        128
+#define EXPONENT_1_LENGTH     128
+#define EXPONENT_2_LENGTH     128
+#define COEFFICIENT_LENGTH    128
+
+/* Adding one to all of the lengths because ASN1 may pad a leading 0 byte
+ * to numbers that could be interpreted as negative */
+typedef struct RsaParams_t
+{
+    CK_BYTE modulus[ MODULUS_LENGTH + 1 ];
+    CK_BYTE e[ E_LENGTH + 1 ];
+    CK_BYTE d[ D_LENGTH + 1 ];
+    CK_BYTE prime1[ PRIME_1_LENGTH + 1 ];
+    CK_BYTE prime2[ PRIME_2_LENGTH + 1 ];
+    CK_BYTE exponent1[ EXPONENT_1_LENGTH + 1 ];
+    CK_BYTE exponent2[ EXPONENT_2_LENGTH + 1 ];
+    CK_BYTE coefficient[ COEFFICIENT_LENGTH + 1 ];
+} RsaParams_t;
+
 /* Internal structure for capturing the provisioned state of the host device. */
 typedef struct ProvisionedState_t
 {
@@ -85,6 +109,13 @@ typedef struct ProvisionedState_t
                           * ID might be stored here which can be used as a field
                           * in the subject of the device certificate. */
 } ProvisionedState_t;
+
+/* This function can be found in libraries/3rdparty/mbedtls/utils/mbedtls_utils.c. */
+extern int convert_pem_to_der( const unsigned char * pucInput,
+                               size_t xLen,
+                               unsigned char * pucOutput,
+                               size_t * pxOlen );
+
 /*-----------------------------------------------------------*/
 
 /* Import the specified ECDSA private key into storage. */
@@ -176,31 +207,7 @@ static CK_RV prvProvisionPrivateECKey( CK_SESSION_HANDLE xSession,
     return xResult;
 }
 
-
-
-/* Length parameters for importing RSA-2048 private keys. */
-#define MODULUS_LENGTH        pkcs11RSA_2048_MODULUS_BITS / 8
-#define E_LENGTH              3
-#define D_LENGTH              pkcs11RSA_2048_MODULUS_BITS / 8
-#define PRIME_1_LENGTH        128
-#define PRIME_2_LENGTH        128
-#define EXPONENT_1_LENGTH     128
-#define EXPONENT_2_LENGTH     128
-#define COEFFICIENT_LENGTH    128
-
-/* Adding one to all of the lengths because ASN1 may pad a leading 0 byte
- * to numbers that could be interpreted as negative */
-typedef struct RsaParams_t
-{
-    CK_BYTE modulus[ MODULUS_LENGTH + 1 ];
-    CK_BYTE e[ E_LENGTH + 1 ];
-    CK_BYTE d[ D_LENGTH + 1 ];
-    CK_BYTE prime1[ PRIME_1_LENGTH + 1 ];
-    CK_BYTE prime2[ PRIME_2_LENGTH + 1 ];
-    CK_BYTE exponent1[ EXPONENT_1_LENGTH + 1 ];
-    CK_BYTE exponent2[ EXPONENT_2_LENGTH + 1 ];
-    CK_BYTE coefficient[ COEFFICIENT_LENGTH + 1 ];
-} RsaParams_t;
+/*-----------------------------------------------------------*/
 
 /* Import the specified RSA private key into storage. */
 static CK_RV prvProvisionPrivateRSAKey( CK_SESSION_HANDLE xSession,
@@ -301,6 +308,8 @@ static CK_RV prvProvisionPrivateRSAKey( CK_SESSION_HANDLE xSession,
 
     return xResult;
 }
+
+/*-----------------------------------------------------------*/
 
 /* Import the specified private key into storage. */
 CK_RV xProvisionPrivateKey( CK_SESSION_HANDLE xSession,
@@ -605,6 +614,7 @@ CK_RV xProvisionGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
+    vLoggingPrintf("    pxFunctionList->C_GenerateKeyPair...\r\n");
     xResult = pxFunctionList->C_GenerateKeyPair( xSession,
                                                  &xMechanism,
                                                  xPublicKeyTemplate,
@@ -612,17 +622,12 @@ CK_RV xProvisionGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
                                                  xPrivateKeyTemplate, sizeof( xPrivateKeyTemplate ) / sizeof( CK_ATTRIBUTE ),
                                                  pxPublicKeyHandle,
                                                  pxPrivateKeyHandle );
+    vLoggingPrintf("    pxFunctionList->C_GenerateKeyPair %x\r\n", xResult);
 
     return xResult;
 }
 
 /*-----------------------------------------------------------*/
-
-/* This function can be found in libraries/3rdparty/mbedtls/utils/mbedtls_utils.c. */
-extern int convert_pem_to_der( const unsigned char * pucInput,
-                               size_t xLen,
-                               unsigned char * pucOutput,
-                               size_t * pxOlen );
 
 /* Import the specified X.509 client certificate into storage. */
 CK_RV xProvisionCertificate( CK_SESSION_HANDLE xSession,
@@ -1083,7 +1088,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
     CK_BBOOL xKeyPairGenerationMode = CK_FALSE;
 
     xResult = C_GetFunctionList( &pxFunctionList );
-#if 1
+
     #if ( pkcs11configIMPORT_PRIVATE_KEYS_SUPPORTED == 1 )
 
         /* Attempt to clean-up old crypto objects, but only if private key import is
@@ -1183,7 +1188,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
          * couldn't be read, try to generate new ones below. */
         xResult = CKR_OK;
     }
-#endif
+
     #if ( 1 == keyprovisioningFORCE_GENERATE_NEW_KEY_PAIR )
         xKeyPairGenerationMode = CK_TRUE;
     #endif
@@ -1191,12 +1196,13 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
     if( ( xResult == CKR_OK ) && ( CK_TRUE == xKeyPairGenerationMode ) )
     {
         /* Generate a new default key pair. */
+    	vLoggingPrintf("  xProvisionGenerateKeyPairEC...\r\n");
         xResult = xProvisionGenerateKeyPairEC( xSession,
                                                ( uint8_t * ) pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS,
                                                ( uint8_t * ) pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS,
                                                &xProvisionedState.xPrivateKey,
                                                &xProvisionedState.xPublicKey );
-        vLoggingPrintf("xProvisionGenerateKeyPairEC: %x", xResult);
+        vLoggingPrintf("  xProvisionGenerateKeyPairEC: %x\r\n", xResult);
 
         if( CKR_OK == xResult )
         {
@@ -1206,8 +1212,9 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
                 vPortFree( xProvisionedState.pucDerPublicKey );
                 xProvisionedState.pucDerPublicKey = NULL;
             }
-vLoggingPrintf("xProvisionedState.pucDerPublicKey: %s", xProvisionedState.pucDerPublicKey);
+
             /* Get the bytes of the new public key. */
+            vLoggingPrintf("  prvExportPublicKey\r\n", xResult);
             prvExportPublicKey( xSession,
                                 xProvisionedState.xPublicKey,
                                 &xProvisionedState.pucDerPublicKey,
@@ -1348,6 +1355,7 @@ CK_RV xInitializePkcs11Token()
 
 /*-----------------------------------------------------------*/
 
+/* Perform device provisioning using the specified TLS client credentials. */
 void vAlternateKeyProvisioning( ProvisioningParams_t * xParams )
 {
     CK_RV xResult = CKR_OK;
@@ -1386,13 +1394,14 @@ void vAlternateKeyProvisioning( ProvisioningParams_t * xParams )
 }
 /*-----------------------------------------------------------*/
 
+/* Perform device provisioning using the default TLS client credentials. */
 void vDevModeKeyProvisioning( void )
 {
     ProvisioningParams_t xParams;
 
+    xParams.pucJITPCertificate = ( uint8_t * ) keyJITR_DEVICE_CERTIFICATE_AUTHORITY_PEM;
     xParams.pucClientPrivateKey = ( uint8_t * ) keyCLIENT_PRIVATE_KEY_PEM;
     xParams.pucClientCertificate = ( uint8_t * ) keyCLIENT_CERTIFICATE_PEM;
-    xParams.pucJITPCertificate = ( uint8_t * ) keyJITR_DEVICE_CERTIFICATE_AUTHORITY_PEM;
 
     /* If using a JITR flow, a JITR certificate must be supplied. If using credentials generated by
      * AWS, this certificate is not needed. */
@@ -1406,7 +1415,6 @@ void vDevModeKeyProvisioning( void )
     else
     {
         xParams.pucJITPCertificate = NULL;
-//        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucJITPCertificate = NULL\r\n" ) );
     }
 
     /* The hard-coded client certificate and private key can be useful for
@@ -1422,7 +1430,6 @@ void vDevModeKeyProvisioning( void )
     else
     {
         xParams.pucClientPrivateKey = NULL;
-//        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucClientPrivateKey = NULL\r\n" ) );
     }
 
     if( ( NULL != xParams.pucClientCertificate ) &&
@@ -1435,7 +1442,6 @@ void vDevModeKeyProvisioning( void )
     else
     {
         xParams.pucClientCertificate = NULL;
-//        configPRINTF( ( "vDevModeKeyProvisioning: xParams.pucClientCertificate = NULL\r\n" ) );
     }
 
     vAlternateKeyProvisioning( &xParams );

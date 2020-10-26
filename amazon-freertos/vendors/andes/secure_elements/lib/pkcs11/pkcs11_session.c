@@ -344,27 +344,32 @@ CK_RV pkcs11_session_login(CK_SESSION_HANDLE hSession, CK_USER_TYPE userType, CK
 
     if (!lib_ctx || !lib_ctx->initialized)
     {
+//    	vLoggingPrintf("    Error: pkcs11_session_login %x\r\n", CKR_CRYPTOKI_NOT_INITIALIZED);
         return CKR_CRYPTOKI_NOT_INITIALIZED;
     }
 
     if (!pPin || ulPinLen != 64)
     {
+//    	vLoggingPrintf("    Error: CKR_ARGUMENTS_BAD, pPin %s, ulPinLen %d\r\n", CKR_ARGUMENTS_BAD, pPin, ulPinLen);
         return CKR_ARGUMENTS_BAD;
     }
 
     if (!session_ctx)
     {
+//    	vLoggingPrintf("    Error: pkcs11_session_login %x\r\n", CKR_SESSION_HANDLE_INVALID);
         return CKR_SESSION_HANDLE_INVALID;
     }
 
     if (!session_ctx->initialized)
     {
+//    	vLoggingPrintf("    Error: pkcs11_session_login %x\r\n", CKR_SESSION_CLOSED);
         return CKR_SESSION_CLOSED;
     }
 
     /* Decode the hex string pin into a binary io protection key */
     outlen = sizeof(session_ctx->read_key);
     (void)atcab_hex2bin((const char*)pPin, ulPinLen, session_ctx->read_key, &outlen);
+//    vLoggingPrintf("    pkcs11_session_login %x\r\n", CKR_OK);
 
     return CKR_OK;
 }

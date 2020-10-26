@@ -144,7 +144,7 @@ CK_RV xInitializePkcs11Session( CK_SESSION_HANDLE * pxSession )
     CK_ULONG xSlotCount;
 
     xResult = C_GetFunctionList( &pxFunctionList );
-
+//    vLoggingPrintf("  C_GetFunctionList %x\r\n", xResult);
     if( pxSession == NULL )
     {
         xResult = CKR_ARGUMENTS_BAD;
@@ -154,17 +154,19 @@ CK_RV xInitializePkcs11Session( CK_SESSION_HANDLE * pxSession )
     if( xResult == CKR_OK )
     {
         xResult = xInitializePKCS11();
-
+//        vLoggingPrintf("  xInitializePKCS11 %x\r\n", xResult);
         if( xResult == CKR_CRYPTOKI_ALREADY_INITIALIZED )
         {
             xResult = CKR_OK;
         }
+//        vLoggingPrintf("  xInitializePKCS11 %x\r\n", xResult);
     }
 
     /* Get a list of slots available. */
     if( xResult == CKR_OK )
     {
         xResult = xGetSlotList( &pxSlotId, &xSlotCount );
+//        vLoggingPrintf("  xGetSlotList %x\r\n", xResult);
     }
 
     /* Open a PKCS #11 session. */
@@ -175,6 +177,7 @@ CK_RV xInitializePkcs11Session( CK_SESSION_HANDLE * pxSession )
          * for selecting an appropriate slot here.
          */
         xResult = prvOpenSession( pxSession, pxSlotId[ 0 ] );
+//        vLoggingPrintf("  prvOpenSession %x\r\n", xResult);
 
         /* Free the memory allocated by xGetSlotList. */
         vPortFree( pxSlotId );
@@ -182,10 +185,13 @@ CK_RV xInitializePkcs11Session( CK_SESSION_HANDLE * pxSession )
 
     if( ( xResult == CKR_OK ) && ( pxFunctionList->C_Login != NULL ) )
     {
+    	vLoggingPrintf("  pxFunctionList->C_Login... %x, %x, %x, %d\r\n", *pxSession, CKU_USER, ( CK_UTF8CHAR_PTR ) configPKCS11_DEFAULT_USER_PIN,
+    			sizeof( configPKCS11_DEFAULT_USER_PIN ) - 1);
         xResult = pxFunctionList->C_Login( *pxSession,
                                            CKU_USER,
                                            ( CK_UTF8CHAR_PTR ) configPKCS11_DEFAULT_USER_PIN,
                                            sizeof( configPKCS11_DEFAULT_USER_PIN ) - 1 );
+        vLoggingPrintf("  pxFunctionList->C_Login %x\r\n", xResult);
     }
 
     return xResult;

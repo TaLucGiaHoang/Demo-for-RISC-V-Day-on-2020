@@ -54,7 +54,7 @@ else()
         INTERFACE $<$<COMPILE_LANGUAGE:C>:${compiler_defined_symbols}>
         -DportasmHANDLE_INTERRUPT=FreeRTOS_IRQ_handler
         -D__freertos_irq_stack_top=_stack
-        #-DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"
+        -DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"
         -DCFG_MAKEFILE
         -DCFG_XIP
         -DCFG_CACHE_ENABLE
@@ -67,7 +67,7 @@ target_compile_definitions(
     AFR::compiler::mcu_port
     INTERFACE $<$<COMPILE_LANGUAGE:C>:${compiler_defined_symbols}>
     ## predefined macro used for atecc608a lib
-    -DMBEDTLS_CONFIG_FILE=\"aws_mbedtls_config.h\"
+    #-DMBEDTLS_CONFIG_FILE=\"aws_mbedtls_config.h\"
     # use CONFIG_MEDTLS_USE_AFR_MEMORY macro for iot_crypto.c V1.0.8 and above
     #-DCONFIG_MEDTLS_USE_AFR_MEMORY
     -D__free_rtos__
@@ -315,6 +315,7 @@ target_sources(
         "${secure_elements_dir}/lib/atca_device.c"
         "${secure_elements_dir}/lib/atca_execution.c"
         "${secure_elements_dir}/lib/atca_iface.c"
+        "${secure_elements_dir}/test/atca_basic_tests.c"
         "${AFR_MODULES_ABSTRACTIONS_DIR}/pkcs11/ecc608a/atca_cert_chain.c"
         "${AFR_MODULES_ABSTRACTIONS_DIR}/pkcs11/ecc608a/iot_pkcs11_secure_element.c"
 #"${AFR_MODULES_ABSTRACTIONS_DIR}/pkcs11/mbedtls/iot_pkcs11_mbedtls.c"

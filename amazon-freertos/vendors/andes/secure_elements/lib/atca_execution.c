@@ -298,6 +298,7 @@ ATCA_STATUS atca_execute_command(ATCAPacket* packet, ATCADevice device)
             return status;
         }
         execution_or_wait_time = device->mCommands->execution_time_msec;
+        vLoggingPrintf("      atca_execute_command: 0x%x, 0x%x , 0x%x, %d bytes\r\n", packet->opcode, packet->param1, packet->param2, packet->txsize);
         max_delay_count = 0;
 #else
         execution_or_wait_time = ATCA_POLLING_INIT_TIME_MSEC;
@@ -306,12 +307,14 @@ ATCA_STATUS atca_execute_command(ATCAPacket* packet, ATCADevice device)
 
         if ((status = atwake(device->mIface)) != ATCA_SUCCESS)
         {
+        	vLoggingPrintf("      Error: atsend %x\r\n", status);
             break;
         }
 
         // send the command
         if ((status = atsend(device->mIface, (uint8_t*)packet, packet->txsize)) != ATCA_SUCCESS)
         {
+        	vLoggingPrintf("      Error: atsend %x\r\n", status);
             break;
         }
 
@@ -325,9 +328,9 @@ ATCA_STATUS atca_execute_command(ATCAPacket* packet, ATCADevice device)
             rxsize = sizeof(packet->data);
             if ((status = atreceive(device->mIface, packet->data, &rxsize)) == ATCA_SUCCESS)
             {
+//            	vLoggingPrintf("      atreceive %x\r\n", status);
                 break;
             }
-
 #ifndef ATCA_NO_POLL
             // delay for polling frequency time
             atca_delay_ms(ATCA_POLLING_FREQUENCY_TIME_MSEC);
@@ -353,19 +356,23 @@ ATCA_STATUS atca_execute_command(ATCAPacket* packet, ATCADevice device)
             break;
         }
 
+        vLoggingPrintf("        atreceive 0x%x 0x%x\r\n", packet->data[0], packet->data[1]);
         if ((status = atCheckCrc(packet->data)) != ATCA_SUCCESS)
         {
+        	vLoggingPrintf("        atCheckCrc %x\r\n", status);
             break;
         }
 
         if ((status = isATCAError(packet->data)) != ATCA_SUCCESS)
         {
+        	vLoggingPrintf("        isATCAError %x\r\n", status);
             break;
         }
     }
     while (0);
 
     atidle(device->mIface);
+    vLoggingPrintf("        atidle, done %x\r\n", status);
     return status;
 }
 
