@@ -121,6 +121,7 @@ CK_RV pkcs11_token_init(CK_SLOT_ID slotID, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinL
     pkcs11_lib_ctx_ptr pLibCtx;
     pkcs11_slot_ctx_ptr pSlotCtx;
 
+    vLoggingPrintf("pkcs11_token_init slotID:%x\r\n", slotID);
     rv = pkcs11_init_check(&pLibCtx, FALSE);
     if (rv)
     {
@@ -141,12 +142,22 @@ CK_RV pkcs11_token_init(CK_SLOT_ID slotID, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinL
     {
         /* Check the config zone lock status */
         rv = atcab_is_locked(LOCK_ZONE_CONFIG, &lock);
+        vLoggingPrintf("  Check the config zone lock status: atcab_is_locked %x, lock:%x\r\n", rv, lock);
     }
 
     if (ATCA_SUCCESS == rv)
     {
         /* Get the device type */
         rv = atcab_info(buf);
+        //////////
+        vLoggingPrintf("  Get the device type: atcab_info %x\r\n", rv);
+        for(int i = 0; i < 2; i++) {
+        	for(int j = 0; j<16; j++) {
+        		vLoggingPrintf("%02x, ", buf[i*16+j]);
+        	}
+        	vLoggingPrintf("\r\n");
+        }
+        //////////
     }
 
     switch (buf[2])
@@ -179,14 +190,17 @@ CK_RV pkcs11_token_init(CK_SLOT_ID slotID, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinL
         buf[0] = ATCA_I2C_ECC_ADDRESS;
 #endif
 
+        vLoggingPrintf("  Program the configuration zone, lock:%x\r\n", lock);
         if (ATCA_SUCCESS == rv)
         {
             rv = atcab_write_config_zone(pConfig);
+            vLoggingPrintf("  atcab_write_config_zone %x\r\n", rv);
         }
 
         if (ATCA_SUCCESS == rv)
         {
             rv = atcab_lock_config_zone();
+            vLoggingPrintf("  atcab_lock_config_zone %x\r\n", rv);
         }
     }
 
@@ -194,6 +208,7 @@ CK_RV pkcs11_token_init(CK_SLOT_ID slotID, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinL
     {
         /* Check data zone lock */
         rv = atcab_is_locked(LOCK_ZONE_DATA, &lock);
+        vLoggingPrintf("  Check data zone lock %x, lock:%x\r\n", rv, lock);
     }
 
 
@@ -202,11 +217,14 @@ CK_RV pkcs11_token_init(CK_SLOT_ID slotID, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinL
         size_t buflen = sizeof(buf);
 
         /* Generate New Keys */
+        vLoggingPrintf("  Generate New Keys, lock:%x\r\n", lock);
         for (int i = 0; (i < 16) && (ATCA_SUCCESS == rv); i++)
         {
+        	vLoggingPrintf("  ((atecc608a_config_t*)pConfig)->KeyConfig[%d]: 0x%02x <<<\r\n", i, ((atecc608a_config_t*)pConfig)->KeyConfig[i]);
             if (ATCA_KEY_CONFIG_PRIVATE_MASK & ((atecc608a_config_t*)pConfig)->KeyConfig[i])
             {
                 rv = atcab_genkey(i, NULL);
+                vLoggingPrintf("  Generate New Keys: atcab_genkey %x <<<\r\n", rv);
             }
         }
 
@@ -216,19 +234,23 @@ CK_RV pkcs11_token_init(CK_SLOT_ID slotID, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinL
             if (CKR_OK == rv)
             {
                 rv = atcab_hex2bin(pPin, ulPinLen, buf, &buflen);
+                vLoggingPrintf("  Generate New Keys: atcab_hex2bin %x <<<\r\n", rv);
             }
 
             /* Write the default pin */
             if (CKR_OK == rv)
             {
                 rv = atcab_write_zone(ATCA_ZONE_DATA, PKCS11_PIN_SLOT, 0, 0, buf, buflen);
+                vLoggingPrintf("  Generate New Keys: atcab_write_zone %x <<<\r\n", rv);
             }
         }
 
         /* Lock the data zone */
+        vLoggingPrintf("  Lock the data zone, rv:%x\r\n", rv);
         if (ATCA_SUCCESS == rv)
         {
             rv = atcab_lock_data_zone();
+            vLoggingPrintf("  Generate New Keys: atcab_lock_data_zone %x <<<\r\n", rv);
         }
     }
 
@@ -250,10 +272,12 @@ CK_RV pkcs11_token_init(CK_SLOT_ID slotID, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinL
 
     if (ATCA_SUCCESS != rv)
     {
+    	vLoggingPrintf("pkcs11_token_init %x (CKR_FUNCTION_FAILED)\r\n", CKR_FUNCTION_FAILED);
         return CKR_FUNCTION_FAILED;
     }
     else
     {
+    	vLoggingPrintf("pkcs11_token_init %x (CKR_OK)\r\n", CKR_OK);
         return CKR_OK;
     }
 #else

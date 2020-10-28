@@ -56,7 +56,7 @@ ATCA_STATUS atcab_genkey_base(uint8_t mode, uint16_t key_id, const uint8_t* othe
     ATCAPacket packet;
     ATCACommand ca_cmd = _gDevice->mCommands;
     ATCA_STATUS status = ATCA_GEN_FAIL;
-    vLoggingPrintf("    atcab_genkey_base mode: 0x%x key_id: 0x%x public_key 0x%x\r\n", mode, key_id, public_key);
+    vLoggingPrintf("    atcab_genkey_base mode=0x%x key_id=0x%x public_key=0x%x\r\n", mode, key_id, public_key);
     do
     {
         // Build GenKey command

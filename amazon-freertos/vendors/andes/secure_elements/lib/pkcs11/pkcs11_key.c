@@ -704,6 +704,8 @@ CK_RV pkcs11_key_generate_pair
 
     if (CKR_OK == rv)
     {
+    	pPrivate->slot = 2; // SHC added, force to use slot 2
+    	vLoggingPrintf("    Force to set pPrivate->slot=%x 2\r\n", pPrivate->slot);
         pPublic->slot = pPrivate->slot;
         pPublic->flags = pPrivate->flags;
         memcpy(pPublic->name, pName->pValue, pName->ulValueLen);
@@ -714,10 +716,9 @@ CK_RV pkcs11_key_generate_pair
         pPublic->size = 64;
         pPublic->config = &((pkcs11_slot_ctx_ptr)pSession->slot)->cfg_zone;
 
-        vLoggingPrintf("    pkcs11_util_convert_rv(atcab_genkey( %x )\r\n", rv);
+        vLoggingPrintf("    pkcs11_util_convert_rv(atcab_genkey( %x , NULL))\r\n", pPrivate->slot);
         rv = pkcs11_util_convert_rv(atcab_genkey(pPrivate->slot, NULL));
-        rv = 0; // test
-        vLoggingPrintf("    pkcs11_util_convert_rv(atcab_genkey( %x ) %x\r\n", rv);
+        vLoggingPrintf("    pkcs11_util_convert_rv(atcab_genkey()) %x\r\n", rv);
     }
 
     if (CKR_OK == rv)
