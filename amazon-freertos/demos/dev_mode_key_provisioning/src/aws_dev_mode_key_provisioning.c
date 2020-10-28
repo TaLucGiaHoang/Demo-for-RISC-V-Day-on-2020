@@ -120,11 +120,11 @@ extern int convert_pem_to_der( const unsigned char * pucInput,
 
 /* Import the specified ECDSA private key into storage. */
 static CK_RV prvProvisionPrivateECKey( CK_SESSION_HANDLE xSession,
-                                uint8_t * pucPrivateKey,
-                                size_t xPrivateKeyLength,
-                                uint8_t * pucLabel,
-                                CK_OBJECT_HANDLE_PTR pxObjectHandle,
-                                mbedtls_pk_context * pxMbedPkContext )
+                                       uint8_t * pucPrivateKey,
+                                       size_t xPrivateKeyLength,
+                                       uint8_t * pucLabel,
+                                       CK_OBJECT_HANDLE_PTR pxObjectHandle,
+                                       mbedtls_pk_context * pxMbedPkContext )
 {
     CK_RV xResult = CKR_OK;
     CK_FUNCTION_LIST_PTR pxFunctionList = NULL;
@@ -211,11 +211,11 @@ static CK_RV prvProvisionPrivateECKey( CK_SESSION_HANDLE xSession,
 
 /* Import the specified RSA private key into storage. */
 static CK_RV prvProvisionPrivateRSAKey( CK_SESSION_HANDLE xSession,
-                                 uint8_t * pucPrivateKey,
-                                 size_t xPrivateKeyLength,
-                                 uint8_t * pucLabel,
-                                 CK_OBJECT_HANDLE_PTR pxObjectHandle,
-                                 mbedtls_pk_context * pxMbedPkContext )
+                                        uint8_t * pucPrivateKey,
+                                        size_t xPrivateKeyLength,
+                                        uint8_t * pucLabel,
+                                        CK_OBJECT_HANDLE_PTR pxObjectHandle,
+                                        mbedtls_pk_context * pxMbedPkContext )
 {
     CK_RV xResult = CKR_OK;
     CK_FUNCTION_LIST_PTR pxFunctionList = NULL;
@@ -1033,7 +1033,7 @@ static void prvWriteHexBytesToConsole( char * pcDescription,
 
     /* Write help text to the console. */
     configPRINTF( ( "%s, %d bytes:\r\n", pcDescription, ulDataLength ) );
-
+vTaskDelay(500); // shc added
     /* Iterate over the bytes of the encoded public key. */
     for( ; ulIndex < ulDataLength; ulIndex++ )
     {
@@ -1294,6 +1294,7 @@ CK_RV xInitializePkcs11Token()
 
     if( xResult == CKR_OK )
     {
+    	vLoggingPrintf("  xInitializePKCS11...\r\n");
         xResult = xInitializePKCS11();
         vLoggingPrintf("  xInitializePKCS11 %x\r\n", xResult);
     }
@@ -1301,7 +1302,7 @@ CK_RV xInitializePkcs11Token()
     if( ( xResult == CKR_OK ) || ( xResult == CKR_CRYPTOKI_ALREADY_INITIALIZED ) )
     {
         xResult = xGetSlotList( &pxSlotId, &xSlotCount );
-        vLoggingPrintf("  xGetSlotList %x\r\n", xResult);
+        vLoggingPrintf("  xGetSlotList %x, pxSlotId=0x%x, xSlotCount=%d\r\n", xResult, pxSlotId[0], xSlotCount);
     }
 
     if( xResult == CKR_OK )
@@ -1330,14 +1331,16 @@ CK_RV xInitializePkcs11Token()
         xTokenFlags = pxTokenInfo->flags;
     }
 
+    vLoggingPrintf("  check xTokenFlags=0x%x (CKF_TOKEN_INITIALIZED=0x400)\r\n", pxTokenInfo->flags);
     if( ( CKR_OK == xResult ) && !( CKF_TOKEN_INITIALIZED & xTokenFlags ) )
     {
         /* Initialize the token if it is not already. */
+    	vLoggingPrintf("  pxFunctionList->C_InitToken...\r\n");
         xResult = pxFunctionList->C_InitToken( pxSlotId[ 0 ],
                                                ( CK_UTF8CHAR_PTR ) configPKCS11_DEFAULT_USER_PIN,
                                                sizeof( configPKCS11_DEFAULT_USER_PIN ) - 1,
                                                ( CK_UTF8CHAR_PTR ) "FreeRTOS" );
-        vLoggingPrintf("  pxFunctionList->C_InitToken %x\r\n", xResult);
+        vLoggingPrintf("  pxFunctionList->C_InitToken %x, pxSlotId=0x%x\r\n", xResult, pxSlotId[0]);
     }
 
     if( pxTokenInfo != NULL )
