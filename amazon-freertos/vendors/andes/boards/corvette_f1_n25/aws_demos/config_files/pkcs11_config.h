@@ -81,7 +81,7 @@
 /** Maximum number of slots allowed in the system - if static memory this will
    always be the number of slots */
 #ifndef PKCS11_MAX_SLOTS_ALLOWED
-#define PKCS11_MAX_SLOTS_ALLOWED        1
+#define PKCS11_MAX_SLOTS_ALLOWED        16
 #endif
 
 /** Maximum number of total sessions allowed in the system - if using static

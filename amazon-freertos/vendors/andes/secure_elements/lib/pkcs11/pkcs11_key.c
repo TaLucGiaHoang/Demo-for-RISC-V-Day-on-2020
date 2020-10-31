@@ -704,7 +704,7 @@ CK_RV pkcs11_key_generate_pair
 
     if (CKR_OK == rv)
     {
-    	pPrivate->slot = 2; // SHC added, force to use slot 2
+    	//pPrivate->slot = 2; // SHC added, force to use slot 2
     	vLoggingPrintf("    Force to set pPrivate->slot=%x 2\r\n", pPrivate->slot);
         pPublic->slot = pPrivate->slot;
         pPublic->flags = pPrivate->flags;

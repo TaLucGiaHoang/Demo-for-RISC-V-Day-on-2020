@@ -175,6 +175,9 @@ CK_RV xInitializePkcs11Session( CK_SESSION_HANDLE * pxSession )
          * If your application has multiple slots, insert logic
          * for selecting an appropriate slot here.
          */
+
+    	pxSlotId[ 0 ] =0 ;
+
         vLoggingPrintf("  prvOpenSession pxSlotId[0]\r\n", xResult);
         xResult = prvOpenSession( pxSession, pxSlotId[ 0 ] );
         vLoggingPrintf("  prvOpenSession %x\r\n", xResult);
