@@ -26,8 +26,6 @@
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 #include "task.h"
-#include "FreeRTOS_IP.h"
-#include "FreeRTOS_Sockets.h"
 
 /* Platfrom includes. */
 #include "uart.h"
@@ -127,7 +125,7 @@ void vApplicationDaemonTaskStartupHook( void );
  * start network dependent applications in vApplicationDaemonTaskStartupHook after the
  * network status is up.
  */
-void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent );
+//void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent );
 
 /**
  * @brief Initializes the board.
@@ -164,6 +162,77 @@ static struct atca_device g_atcab_device_test;
 
 void testATCA( void )
 {
+#if 1
+	ATCAIfaceCfg Cfg = cfg_ateccx08a_i2c_default;
+	ATCA_STATUS test = atcab_init(&Cfg);
+	char version[32] = {0};
+	test = atcab_version(version);
+	vLoggingPrintf("version: %s\r\n", version);
+#if 0 //read config zone
+	test = atcab_read_config_zone(config_data);
+	vLoggingPrintf("atcab_read_config_zone code--> %d\r\n", test);
+	vLoggingPrintf("\r\n-------------------------\r\n");
+	for(int i = 0 ; i < sizeof(config_data); i++)
+	{
+		vLoggingPrintf("0x%x\t", config_data[i]);
+		if((((i+1)%4)==0))
+			vLoggingPrintf("\r\n");
+		vTaskDelay( (TickType_t) 100 );
+	}
+#endif
+
+	unsigned char public_key[64] = {0};
+	memset(public_key, 0x44, 64 ); // mark the key with bogus data
+	bool isLocked = false;
+	for(int k = 0; k <=15; k++)
+	{
+		test = atcab_is_locked( LOCK_ZONE_CONFIG, &isLocked );
+		vLoggingPrintf("atcab_is_locked --> 0x%x\r\n", test);
+		if ( !isLocked )vLoggingPrintf("Configuration zone must be locked for this test to succeed.\r\n");
+		else
+		{
+			vLoggingPrintf("\r\n------------slot: %d-------------\r\n", k);
+			test = atcab_get_pubkey(k, public_key);
+			vLoggingPrintf("atcab_genkey--> 0x%x\r\n", test);
+			if(test == ATCA_SUCCESS)
+				for(int i = 0; i < sizeof(public_key); i++)
+				{
+					vLoggingPrintf("0x%x\t", public_key[i]);
+					if((((i+1)%4)==0))
+						vLoggingPrintf("\r\n");
+					vTaskDelay( (TickType_t) 100 );
+				}
+
+			vLoggingPrintf("\r\n-------------------------\r\n");
+		}
+	}
+
+	// for(int i = 8; i <= 15; i++ )
+	// {
+	// test = atcab_read_pubkey(i, public_key);
+	// if(test == ATCA_SUCCESS)
+	// {
+	// vLoggingPrintf("slot: %d [ok]\r\n", i);
+	// }
+	// }
+	// for(int j = 8; j <= 15; j++ )
+	// {
+	// vLoggingPrintf("\r\n------------slot: %d-------------\r\n", j);
+	// test = atcab_genkey(j, public_key);
+	// vLoggingPrintf("atcab_genkey--> 0x%x\r\n", test);
+	// if(test == ATCA_SUCCESS)
+	// for(int i = 0; i < sizeof(public_key); i++)
+	// {
+	// vLoggingPrintf("0x%x\t", public_key[i]);
+	// if((((i+1)%4)==0))
+	// vLoggingPrintf("\r\n");
+	// vTaskDelay( (TickType_t) 100 );
+	// }
+	// vLoggingPrintf("\r\n-------------------------\r\n");
+	// }
+#endif
+
+#if 0
 	vLoggingPrintf("\r\ntestATCA\r\n");
 	ATCA_STATUS status = ATCA_GEN_FAIL;
 
@@ -200,7 +269,7 @@ void testATCA( void )
 
     // set clock manually
     _gDevice_test->mCommands->clock_divider &= ATCA_CHIPMODE_CLOCK_DIV_MASK;
-
+#endif
 
 #if 0 // test hal_
     if (cfg->devtype == ATECC608A)
@@ -327,16 +396,17 @@ void vApplicationDaemonTaskStartupHook( void )
     // test shc
     if( SYSTEM_Init() == pdPASS )//&& xTasksAlreadyCreated == pdFALSE )
     {
-//        /* Connect to the Wi-Fi before running the tests. */
-//        prvWifiConnect();
+        /* Connect to the Wi-Fi before running the tests. */
+        prvWifiConnect();
+
         /* A simple example to demonstrate key and certificate provisioning in
          * microcontroller flash using PKCS#11 interface. This should be replaced
          * by production ready key provisioning mechanism. */
         vDevModeKeyProvisioning();
 //
 //    	testATCA(); // SHC test atecc608a lib
-//        /* Start the demo tasks. */
-//        DEMO_RUNNER_RunDemos();
+        /* Start the demo tasks. */
+        DEMO_RUNNER_RunDemos();
     }
 #endif
 }
@@ -350,9 +420,6 @@ void vApplicationDaemonTaskStartupHook( void )
  */
 static void prvWifiConnect( void )
 {
-	configPRINT( "prvWifiConnect\r\n" );
-    /* FIX ME: Delete surrounding compiler directives when the Wi-Fi library is ported. */
-    #if 0
         WIFINetworkParams_t xNetworkParams;
         WIFIReturnCode_t xWifiStatus;
         uint8_t ucTempIp[4] = { 0 };
@@ -361,7 +428,6 @@ static void prvWifiConnect( void )
 
         if( xWifiStatus == eWiFiSuccess )
         {
-
             configPRINTF( ( "Wi-Fi module initialized. Connecting to AP...\r\n" ) );
         }
         else
@@ -370,7 +436,7 @@ static void prvWifiConnect( void )
 
             /* Delay to allow the lower priority logging task to print the above status.
              * The while loop below will block the above printing. */
-            TaskDelay( mainLOGGING_WIFI_STATUS_DELAY );
+            vTaskDelay( mainLOGGING_WIFI_STATUS_DELAY );
 
             while( 1 )
             {
@@ -419,14 +485,12 @@ static void prvWifiConnect( void )
 
             configPRINTF( ( "Wi-Fi configuration successful. \r\n" ) );
         }
-    #endif /* if 0 */
 }
 /*-----------------------------------------------------------*/
-
+#if 0
 void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
 {
-//	configPRINT_STRING( "vApplicationIPNetworkEventHook\r\n" );// shc test
-#if 0 // shc added to ignore
+
     if (eNetworkEvent == eNetworkUp)
     {
         configPRINT("Network connection successful.\n\r");
@@ -471,8 +535,8 @@ void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
         FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
         FreeRTOS_printf( ( "DNS Server Address: %s\r\n\r\n\r\n", cBuffer ) );
     }
-#endif
 }
+#endif
 /*-----------------------------------------------------------*/
 
 /**

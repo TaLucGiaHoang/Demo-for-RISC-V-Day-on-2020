@@ -1,6 +1,6 @@
 /*
- * FreeRTOS Wi-Fi V1.0.0
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Amazon FreeRTOS Wi-Fi for for Nuvoton NuMaker-IoT-M487 V1.0.0
+ * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -28,214 +28,370 @@
  * @brief Wi-Fi Interface.
  */
 
-/* Socket and Wi-Fi interface includes. */
+/* FreeRTOS includes. */
 #include "FreeRTOS.h"
+#include "semphr.h"
+#include "task.h"
+
+/* Socket and Wi-Fi interface includes. */
 #include "iot_wifi.h"
 
 /* Wi-Fi configuration includes. */
 #include "aws_wifi_config.h"
 
-/* Set up logging for this demo. */
-#include "iot_demo_logging.h"
+/* Wi-Fi driver includes. */
+#include "esp8266_wifi.h"
 
-#include "esp32_AT.h"
+
+/* WiFi module definition */
+typedef struct NuWiFiModule
+{
+    ESP_WIFI_Object_t xWifiObject;
+    SemaphoreHandle_t xWifiSem;
+} NuWiFiModule_t;
+NuWiFiModule_t xNuWiFi;
+
+#define ESP_UART            DEV_UART1;
+#define ESP_UART_IRQ        8; // UART1_IRQn
+#define ESP_UART_BAUDRATE   115200;
+#define ESP_TIMEOUT_IN_MS   20000;
+
+static BaseType_t xWIFI_IsInitialized;
+static const TickType_t xSemaphoreWaitTicks = pdMS_TO_TICKS(wificonfigMAX_SEMAPHORE_WAIT_TIME_MS);
+
 /*-----------------------------------------------------------*/
 
+
 WIFIReturnCode_t WIFI_On( void )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-#if 0
-    esp32_init(115200);
-    esp32_create_tasks();
-//	/* Restart esp32 module */
-//	esp32_reset_module();  // reset esp32
-//	esp32_echo_off();  // switch echo off
-#endif
-    return eWiFiFailure;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
+
+    if (xWIFI_IsInitialized == pdFALSE) {
+        static StaticSemaphore_t xSemaphoreBuffer;
+
+        memset(&xNuWiFi, 0, sizeof(xNuWiFi));
+
+        /* Create the sync semaphore for Wi-Fi module operations */
+        xNuWiFi.xWifiSem = xSemaphoreCreateMutexStatic(&xSemaphoreBuffer);
+        /* Initialize semaphore */
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+
+        xNuWiFi.xWifiObject.Uart = ESP_UART;
+        xNuWiFi.xWifiObject.UartIrq = ESP_UART_IRQ;
+        xNuWiFi.xWifiObject.UartBaudRate = ESP_UART_BAUDRATE;
+        xNuWiFi.xWifiObject.Timeout = ESP_TIMEOUT_IN_MS;
+        xNuWiFi.xWifiObject.IsMultiConn = pdFALSE;
+        xNuWiFi.xWifiObject.ActiveCmd = CMD_NONE;
+
+        xWIFI_IsInitialized = pdTRUE;
+    }
+
+    /* Initialize Wi-Fi module */
+    if (ESP_WIFI_Init(&xNuWiFi.xWifiObject) == ESP_WIFI_STATUS_OK) {
+        xWiFiRet = eWiFiSuccess;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_Off( void )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiFailure;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_ConnectAP( const WIFINetworkParams_t * const pxNetworkParams )
-{IotLogError("iot_wifi.c: %s not implemented\r\n", __func__);
-IotLogInfo("SSID = %s\r\n", pxNetworkParams->pcSSID);
-IotLogInfo("Password = %s\r\n", pxNetworkParams->pcPassword);
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
+    uint32_t i;
 
-#if 0
-    esp32_echo_off();
-    esp32_wifi_conn(pxNetworkParams->pcSSID, pxNetworkParams->pcPassword);
-#endif
-    /* FIX ME. */
-    return eWiFiFailure;
+    if (pxNetworkParams == NULL || pxNetworkParams->pcSSID == NULL || 
+        (pxNetworkParams->xSecurity != eWiFiSecurityOpen && pxNetworkParams->pcPassword == NULL)) {
+        return xWiFiRet;
+    }
+
+    configPRINTF(("current task name is \"%s\"\n", pcTaskGetName(xTaskGetCurrentTaskHandle())));
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
+        /* Disconnect first if the network is connected */
+        if (ESP_WIFI_IsConnected(&xNuWiFi.xWifiObject)) {
+            if (ESP_WIFI_Disconnect(&xNuWiFi.xWifiObject) == ESP_WIFI_STATUS_OK) {
+                xWiFiRet = eWiFiSuccess;
+            }
+        } else {
+            xWiFiRet = eWiFiSuccess;
+        }
+
+        if (xWiFiRet == eWiFiSuccess) {
+            xWiFiRet = eWiFiFailure;
+
+            for (i = 0 ; i < wificonfigNUM_CONNECTION_RETRY ; i++) {
+                /* Connect to AP */
+                if (ESP_WIFI_Connect(&xNuWiFi.xWifiObject, pxNetworkParams->pcSSID,
+                                     pxNetworkParams->pcPassword) == ESP_WIFI_STATUS_OK) {
+                    /* Store network settings. */
+                    if (ESP_WIFI_GetNetStatus(&xNuWiFi.xWifiObject) == ESP_WIFI_STATUS_OK) {
+                        xWiFiRet = eWiFiSuccess;
+                        break;
+                    }
+                }
+            }
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    } else {
+        xWiFiRet = eWiFiTimeout;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_Disconnect( void )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiFailure;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
+
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks ) == pdTRUE) {
+        if (ESP_WIFI_Disconnect(&xNuWiFi.xWifiObject) == ESP_WIFI_STATUS_OK) {
+            xWiFiRet = eWiFiSuccess;
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    } else {
+        xWiFiRet = eWiFiTimeout;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_Reset( void )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    esp32_reset_module();
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
 
-    return eWiFiFailure;
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
+        if (ESP_WIFI_Reset(&xNuWiFi.xWifiObject) == ESP_WIFI_STATUS_OK) {
+            xWiFiRet = eWiFiSuccess;
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    } else {
+        xWiFiRet = eWiFiTimeout;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
-WIFIReturnCode_t WIFI_Scan( WIFIScanResult_t * pxBuffer,
-                            uint8_t ucNumNetworks )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiFailure;
+WIFIReturnCode_t WIFI_Scan( WIFIScanResult_t * pxBuffer, uint8_t ucNumNetworks )
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
+
+    if (pxBuffer == NULL) {
+        return xWiFiRet;
+    }
+
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
+        if (ESP_WIFI_Scan(&xNuWiFi.xWifiObject, pxBuffer, ucNumNetworks) == ESP_WIFI_STATUS_OK) {
+            xWiFiRet = eWiFiSuccess;
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    } else {
+        xWiFiRet = eWiFiTimeout;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_SetMode( WIFIDeviceMode_t xDeviceMode )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_GetMode( WIFIDeviceMode_t * pxDeviceMode )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_NetworkAdd( const WIFINetworkProfile_t * const pxNetworkProfile,
                                   uint16_t * pusIndex )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
-WIFIReturnCode_t WIFI_NetworkGet( WIFINetworkProfile_t * pxNetworkProfile,
-                                  uint16_t usIndex )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+WIFIReturnCode_t WIFI_NetworkGet( WIFINetworkProfile_t * pxNetworkProfile, uint16_t usIndex )
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_NetworkDelete( uint16_t usIndex )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
-WIFIReturnCode_t WIFI_Ping( uint8_t * pucIPAddr,
-                            uint16_t usCount,
-                            uint32_t ulIntervalMS )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+WIFIReturnCode_t WIFI_Ping( uint8_t * pucIPAddr, uint16_t usCount, uint32_t ulIntervalMS )
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
+    uint32_t i;
+
+    if (pucIPAddr == NULL || usCount == 0) {
+        return xWiFiRet;
+    }
+
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
+        for (i = 0 ; i < usCount ; i++) {
+            if (ESP_WIFI_Ping(&xNuWiFi.xWifiObject, pucIPAddr) == ESP_WIFI_STATUS_OK) {
+                xWiFiRet = eWiFiSuccess;
+                if (i < usCount - 1) {
+                    vTaskDelay(pdMS_TO_TICKS(ulIntervalMS));
+                }
+            }
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    } else {
+        xWiFiRet = eWiFiTimeout;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_GetIP( uint8_t * pucIPAddr )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
+
+    if (pucIPAddr == NULL) {
+        return xWiFiRet;
+    }
+
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
+        if (xNuWiFi.xWifiObject.IsConnected == pdTRUE) {
+            memcpy(pucIPAddr, xNuWiFi.xWifiObject.StaIpAddr, 4);
+            xWiFiRet = eWiFiSuccess;
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    } else {
+        xWiFiRet = eWiFiTimeout;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_GetMAC( uint8_t * pucMac )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
+
+    if (pucMac == NULL) {
+        return xWiFiRet;
+    }
+
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
+        if (xNuWiFi.xWifiObject.IsConnected == pdTRUE) {
+            memcpy(pucMac, xNuWiFi.xWifiObject.StaMacAddr, 6);
+            xWiFiRet = eWiFiSuccess;
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    } else {
+        xWiFiRet = eWiFiTimeout;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
-WIFIReturnCode_t WIFI_GetHostIP( char * pcHost,
-                                 uint8_t * pucIPAddr )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+WIFIReturnCode_t WIFI_GetHostIP( char * pcHost, uint8_t * pucIPAddr )
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiFailure;
+
+    if (pcHost == NULL || pucIPAddr == NULL) {
+        return xWiFiRet;
+    }
+
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
+        if (ESP_WIFI_GetHostIP(&xNuWiFi.xWifiObject, pcHost, pucIPAddr) == ESP_WIFI_STATUS_OK) {
+            xWiFiRet = eWiFiSuccess;
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    } else {
+        xWiFiRet = eWiFiTimeout;
+    }
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_StartAP( void )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_StopAP( void )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
 WIFIReturnCode_t WIFI_ConfigureAP( const WIFINetworkParams_t * const pxNetworkParams )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
-WIFIReturnCode_t WIFI_SetPMMode( WIFIPMMode_t xPMModeType,
-                                 const void * pvOptionValue )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+WIFIReturnCode_t WIFI_SetPMMode( WIFIPMMode_t xPMModeType, const void * pvOptionValue )
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
-WIFIReturnCode_t WIFI_GetPMMode( WIFIPMMode_t * pxPMModeType,
-                                 void * pvOptionValue )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /* FIX ME. */
-    return eWiFiNotSupported;
+WIFIReturnCode_t WIFI_GetPMMode( WIFIPMMode_t * pxPMModeType, void * pvOptionValue )
+{
+    WIFIReturnCode_t xWiFiRet = eWiFiNotSupported;
+
+    return xWiFiRet;
 }
 /*-----------------------------------------------------------*/
 
-BaseType_t WIFI_IsConnected(void)
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-	/* FIX ME. */
-	return pdFALSE;
+BaseType_t WIFI_IsConnected( void )
+{
+    BaseType_t xIsConnected = pdFALSE;
+
+    if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
+        if (ESP_WIFI_IsConnected(&xNuWiFi.xWifiObject) == pdTRUE) {
+            xIsConnected = pdTRUE;
+        }
+        xSemaphoreGive(xNuWiFi.xWifiSem);
+    }
+
+    return xIsConnected;
 }
 
 WIFIReturnCode_t WIFI_RegisterNetworkStateChangeEventCallback( IotNetworkStateChangeEventCallback_t xCallback  )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-	/** Needs to implement dispatching network state change events **/
-	return eWiFiNotSupported;
-}
-
-/*-----------------------------------------------------------*/
-#include "FreeRTOS.h"
-#include "semphr.h"
-#include "event_groups.h"
-#include "FreeRTOS_IP.h"
-void vApplicationPingReplyHook( ePingReplyStatus_t eStatus,
-                                uint16_t usIdentifier )
-{IotLogInfo("iot_wifi.c: %s not implemented\r\n", __func__);
-    /*handle ping reply. */
-    switch( eStatus )
-    {
-        case eSuccess:
-//            /* A valid ping reply has been received. */
-//            xQueueSend( xPingReplyQueue, &usIdentifier, pdMS_TO_TICKS( 10 ) );
-            break;
-
-        case eInvalidChecksum:
-        case eInvalidData:
-            /* A reply was received but it was not valid. */
-            break;
-    }
+{
+    /** Needs to implement dispatching network state change events **/
+    return eWiFiNotSupported;
 }

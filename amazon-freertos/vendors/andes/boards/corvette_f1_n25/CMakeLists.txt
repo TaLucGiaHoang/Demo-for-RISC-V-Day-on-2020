@@ -197,43 +197,45 @@ afr_mcu_port(wifi)
 target_sources(
     AFR::wifi::mcu_port
     INTERFACE
-        "${afr_ports_dir}/wifi/esp32_AT.c"
         "${afr_ports_dir}/wifi/iot_wifi.c"
-        "${afr_ports_dir}/wifi/iot_wifi_assert.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/wdrvext_wilc1000.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/wilc1000_task.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/common/source/nm_common.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/spi_flash/source/spi_flash.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/nmdrv.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/nmbus.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/m2m_periph.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/m2m_wifi.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/m2m_hif.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/nmasic.c"
-        "${wifi_dir}/wilc1000/dev/spi/wdrv_wilc1000_spi.c"
-        "${wifi_dir}/wilc1000/dev/gpio/wdrv_wilc1000_gpio.c"
-        "${wifi_dir}/wilc1000/dev/gpio/wdrv_wilc1000_eint.c"
-        "${wifi_dir}/wilc1000/osal/wdrv_wilc1000_osal.c"
-        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_main.c"
-        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_connmgr.c"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/nmspi.c"
-        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_scan_helper.c"
-        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_events.c"
-        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_config.c"
-        "${wifi_dir}/wilc1000/include/tmr/sys_tmr.c"
-        "${wifi_dir}/framework/osal/src/osal_freertos.c"
-        "${wifi_dir}/framework/tcpip/src/tcpip_helpers.c"
+        "${wifi_dir}/esp32/esp8266_wifi.c"
+#        "${afr_ports_dir}/wifi/iot_wifi_assert.c"
+#        "${wifi_dir}/esp32/esp32_AT.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/wdrvext_wilc1000.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/wilc1000_task.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/common/source/nm_common.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/spi_flash/source/spi_flash.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/nmdrv.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/nmbus.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/m2m_periph.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/m2m_wifi.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/m2m_hif.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/nmasic.c"
+#        "${wifi_dir}/wilc1000/dev/spi/wdrv_wilc1000_spi.c"
+#        "${wifi_dir}/wilc1000/dev/gpio/wdrv_wilc1000_gpio.c"
+#        "${wifi_dir}/wilc1000/dev/gpio/wdrv_wilc1000_eint.c"
+#        "${wifi_dir}/wilc1000/osal/wdrv_wilc1000_osal.c"
+#        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_main.c"
+#        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_connmgr.c"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source/nmspi.c"
+#        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_scan_helper.c"
+#        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_events.c"
+#        "${wifi_dir}/wilc1000/wireless_driver/wdrv_wilc1000_config.c"
+#        "${wifi_dir}/wilc1000/include/tmr/sys_tmr.c"
+#        "${wifi_dir}/framework/osal/src/osal_freertos.c"
+#        "${wifi_dir}/framework/tcpip/src/tcpip_helpers.c"
 )
 
 target_include_directories(
     AFR::wifi::mcu_port
     INTERFACE
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source"
-	"${wifi_dir}/wilc1000/wireless_driver_extension"
-        "${wifi_dir}/wilc1000/include"
-        "${wifi_dir}/wilc1000/include/tmr"
-        "${wifi_dir}/wilc1000/wireless_driver/include"
-        "${wifi_dir}/framework"
+    	"${wifi_dir}/esp32/"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/source"
+#	"${wifi_dir}/wilc1000/wireless_driver_extension"
+#        "${wifi_dir}/wilc1000/include"
+#        "${wifi_dir}/wilc1000/include/tmr"
+#        "${wifi_dir}/wilc1000/wireless_driver/include"
+#        "${wifi_dir}/framework"
 	"${v5_source}"
         "${AFR_MODULES_ABSTRACTIONS_DIR}/secure_sockets/include"
         "${AFR_MODULES_C_SDK_DIR}/standard/common/include/private"
@@ -241,25 +243,25 @@ target_include_directories(
 )
 
 # FreeRTOS Plus TCP
-afr_mcu_port(freertos_plus_tcp)
-target_sources(
-    AFR::freertos_plus_tcp::mcu_port
-    INTERFACE
-        "${AFR_MODULES_FREERTOS_PLUS_DIR}/standard/freertos_plus_tcp/source/portable/NetworkInterface/andes/BufferAllocation_2.c"
-        "${AFR_MODULES_FREERTOS_PLUS_DIR}/standard/freertos_plus_tcp/source/portable/NetworkInterface/andes/NetworkInterface.c"
-	"${AFR_MODULES_FREERTOS_PLUS_DIR}/standard/freertos_plus_tcp/source/FreeRTOS_IP.c"
-)
+#afr_mcu_port(freertos_plus_tcp)
+#target_sources(
+#    AFR::freertos_plus_tcp::mcu_port
+#    INTERFACE
+#        "${AFR_MODULES_FREERTOS_PLUS_DIR}/standard/freertos_plus_tcp/source/portable/NetworkInterface/andes/BufferAllocation_2.c"
+#        "${AFR_MODULES_FREERTOS_PLUS_DIR}/standard/freertos_plus_tcp/source/portable/NetworkInterface/andes/NetworkInterface.c"
+#	"${AFR_MODULES_FREERTOS_PLUS_DIR}/standard/freertos_plus_tcp/source/FreeRTOS_IP.c"
+#)
 
-target_include_directories(
-    AFR::freertos_plus_tcp::mcu_port
-    INTERFACE
-        "${wifi_dir}/wilc1000/wireless_driver_extension"
-        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/include"
-	"${wifi_dir}/wilc1000/include"
-	"${wifi_dir}/wilc1000/include/tmr"
-	"${wifi_dir}/framework"
-	"${v5_source}"
-)
+#target_include_directories(
+#    AFR::freertos_plus_tcp::mcu_port
+#    INTERFACE
+#        "${wifi_dir}/wilc1000/wireless_driver_extension"
+#        "${wifi_dir}/wilc1000/wireless_driver_extension/driver/include"
+#	"${wifi_dir}/wilc1000/include"
+#	"${wifi_dir}/wilc1000/include/tmr"
+#	"${wifi_dir}/framework"
+#	"${v5_source}"
+#)
 
 
 # PKCS11
@@ -327,17 +329,39 @@ target_link_libraries(
 
 # Secure sockets
 afr_mcu_port(secure_sockets)
-# Link to AFR::secure_sockets_freertos_tcp if you want use default implementation based on
-# FreeRTOS-Plus-TCP.
-target_link_libraries(
-    AFR::secure_sockets::mcu_port
-    INTERFACE AFR::secure_sockets_freertos_plus_tcp
-)
-# Or provide your own implementation.
+
 target_sources(
     AFR::secure_sockets::mcu_port
-    INTERFACE "${AFR_MODULES_ABSTRACTIONS_DIR}/secure_sockets/freertos_plus_tcp/iot_secure_sockets.c"
+    INTERFACE 
+        "${afr_ports_dir}/secure_sockets/iot_secure_sockets.c"
 )
+
+target_link_libraries(
+    AFR::secure_sockets::mcu_port
+    INTERFACE
+        AFR::tls
+        AFR::wifi
+)
+
+target_include_directories(
+    AFR::secure_sockets::mcu_port
+    INTERFACE
+        "${wifi_dir}/esp32"
+)
+
+## Secure sockets
+#afr_mcu_port(secure_sockets)
+## Link to AFR::secure_sockets_freertos_tcp if you want use default implementation based on
+## FreeRTOS-Plus-TCP.
+#target_link_libraries(
+#    AFR::secure_sockets::mcu_port
+#    INTERFACE AFR::secure_sockets_freertos_plus_tcp
+#)
+## Or provide your own implementation.
+#target_sources(
+#    AFR::secure_sockets::mcu_port
+#    INTERFACE "${AFR_MODULES_ABSTRACTIONS_DIR}/secure_sockets/freertos_plus_tcp/iot_secure_sockets.c"
+#)
 
 # -------------------------------------------------------------------------------------------------
 # Amazon FreeRTOS demos and tests
@@ -403,7 +427,7 @@ find_program(riscv32-elf-objdump riscv32-elf-objdump)
 find_program(riscv32-elf-objcopy riscv32-elf-objcopy)
 find_program(riscv32-elf-gcc riscv32-elf-gcc)
 
-set(output_bin_file "${board_dir}/${exe_target}.bin")
+set(output_bin_file "$<TARGET_FILE_DIR:${exe_target}>/${exe_target}.bin")
 set(output_elf_file "$<TARGET_FILE_DIR:${exe_target}>/${exe_target}.elf")
 
 add_custom_command(
@@ -411,4 +435,5 @@ add_custom_command(
     COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${exe_target}>" "${CMAKE_BINARY_DIR}" 
     COMMAND "echo" "Creating .bin file"
     COMMAND "${riscv32-elf-objcopy}" -O binary -S ${output_elf_file} ${output_bin_file}
+    COMMAND "${CMAKE_COMMAND}" -E copy "${output_bin_file}" "${CMAKE_BINARY_DIR}" 
 )
