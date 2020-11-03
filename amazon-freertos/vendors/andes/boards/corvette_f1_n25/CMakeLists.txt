@@ -379,6 +379,7 @@ add_executable(
     ${config_files}
     "${board_dir}/application_code/nds_code/ae250.ld"
     "${board_dir}/application_code/main.c"
+    "${board_dir}/application_code/demo_control_led.c"
 )
 
 target_link_libraries(
