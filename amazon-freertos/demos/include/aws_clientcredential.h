@@ -31,7 +31,6 @@
  *
  * @todo Set this to the fully-qualified DNS name of your MQTT broker.
  */
-//#define clientcredentialMQTT_BROKER_ENDPOINT         "as76wtq33csyg-ats.iot.ap-southeast-1.amazonaws.com"
 #define clientcredentialMQTT_BROKER_ENDPOINT         "as76wtq33csyg.iot.ap-southeast-1.amazonaws.com"
 
 /*
@@ -39,7 +38,7 @@
  *
  * @todo Set this to the unique name of your IoT Thing.
  */
-#define clientcredentialIOT_THING_NAME               "0123037304690601EE"
+#define clientcredentialIOT_THING_NAME               "01237B025CA95B8F01"
 
 /*
  * @brief Port number the MQTT broker is using.

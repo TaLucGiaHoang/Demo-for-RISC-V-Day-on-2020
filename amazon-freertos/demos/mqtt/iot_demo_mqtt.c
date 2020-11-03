@@ -126,7 +126,7 @@
 /**
  * @brief How many topic filters will be used in this demo.
  */
-#define TOPIC_FILTER_COUNT                       ( 4 )
+#define TOPIC_FILTER_COUNT                       ( 1 )
 
 /**
  * @brief The length of each topic filter.
@@ -138,7 +138,7 @@
 /**
  * @brief Format string of the PUBLISH messages in this demo.
  */
-#define PUBLISH_PAYLOAD_FORMAT                   "Hello world %d!"
+#define PUBLISH_PAYLOAD_FORMAT                   "Hello WorlD %d!"
 
 /**
  * @brief Size of the buffer that holds the PUBLISH messages in this demo.
@@ -758,9 +758,9 @@ int RunMqttDemo( bool awsIotMqttMode,
     const char * pTopics[ TOPIC_FILTER_COUNT ] =
     {
         IOT_DEMO_MQTT_TOPIC_PREFIX "/topic/1",
-        IOT_DEMO_MQTT_TOPIC_PREFIX "/topic/2",
-        IOT_DEMO_MQTT_TOPIC_PREFIX "/topic/3",
-        IOT_DEMO_MQTT_TOPIC_PREFIX "/topic/4",
+//        IOT_DEMO_MQTT_TOPIC_PREFIX "/topic/2",
+//        IOT_DEMO_MQTT_TOPIC_PREFIX "/topic/3",
+//        IOT_DEMO_MQTT_TOPIC_PREFIX "/topic/4",
     };
 
     /* Flags for tracking which cleanup functions must be called. */
