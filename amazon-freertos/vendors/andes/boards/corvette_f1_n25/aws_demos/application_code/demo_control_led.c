@@ -61,11 +61,11 @@ int control_led(char c)
 {
 	// This demo only use LED1
 	if(c == '0') {
-		led1(0);
-//		DEV_GPIO->DATAOUT &= ~(0x1E0);    // Turn off all LEDs. Clear GPIO5~8.
+//		led1(0);
+		DEV_GPIO->DATAOUT &= ~(0x1E0);    // Turn off all LEDs. Clear GPIO5~8.
 	} else if (c == '1') {
-		led1(1);
-//		DEV_GPIO->DATAOUT |= (0x1E0);    // Turn on all LEDs. Set GPIO5~8.
+//		led1(1);
+		DEV_GPIO->DATAOUT |= (0x1E0);    // Turn on all LEDs. Set GPIO5~8.
 	} else {
 		return -1;
 	}

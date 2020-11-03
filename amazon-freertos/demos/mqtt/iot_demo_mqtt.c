@@ -138,7 +138,7 @@
 /**
  * @brief Format string of the PUBLISH messages in this demo.
  */
-#define PUBLISH_PAYLOAD_FORMAT                   "Hello WorlD %d!"
+#define PUBLISH_PAYLOAD_FORMAT                   "{\"LED\": 1}"//"Hello WorlD %d!"
 
 /**
  * @brief Size of the buffer that holds the PUBLISH messages in this demo.
@@ -245,6 +245,7 @@ static void _mqttSubscriptionCallback( void * param1,
     char pAcknowledgementMessage[ ACKNOWLEDGEMENT_MESSAGE_BUFFER_LENGTH ] = { 0 };
     IotMqttPublishInfo_t acknowledgementInfo = IOT_MQTT_PUBLISH_INFO_INITIALIZER;
 
+    vTaskDelay(100); // SHC add delay
     /* Print information about the incoming PUBLISH message. */
     IotLogInfo( "Incoming PUBLISH received:\r\n"
                 "Subscription topic filter: %.*s\r\n"
@@ -260,6 +261,18 @@ static void _mqttSubscriptionCallback( void * param1,
                 pPublish->u.message.info.qos,
                 pPublish->u.message.info.payloadLength,
                 pPayload );
+
+    vTaskDelay(50); // SHC add delay
+    // Need to ADD check pPayload equal to {"LED": x} string or not
+    extern int control_led(char c);
+    if(pPayload[8] == '1')
+    {
+    	vLoggingPrintf("\r\nSwitch LED on\r\n");
+    } else if(pPayload[8] == '0')
+    {
+    	vLoggingPrintf("\r\nSwitch LED off\r\n");
+    }
+    control_led(pPayload[8]);
 
     /* Find the message number inside of the PUBLISH message. */
     for( messageNumberIndex = 0; messageNumberIndex < pPublish->u.message.info.payloadLength; messageNumberIndex++ )
