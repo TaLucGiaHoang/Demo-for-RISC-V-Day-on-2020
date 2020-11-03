@@ -105,10 +105,7 @@ ATCA_STATUS atcab_genkey_base(uint8_t mode, uint16_t key_id, const uint8_t* othe
  */
 ATCA_STATUS atcab_genkey(uint16_t key_id, uint8_t *public_key)
 {
-	configPRINTF(("%s[%d]: HEHE\r\n", __func__, __LINE__));
-//    return atcab_genkey_base(GENKEY_MODE_PRIVATE, key_id, NULL, public_key);
-//	key_id=2;
-    return atcab_genkey_base(GENKEY_MODE_PUBLIC, key_id, NULL, public_key);
+    return atcab_genkey_base(GENKEY_MODE_PRIVATE, key_id, NULL, public_key);
 }
 
 /** \brief Uses GenKey command to calculate the public key from an existing
