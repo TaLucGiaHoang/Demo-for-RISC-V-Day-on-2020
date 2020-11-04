@@ -32,8 +32,11 @@
 #define ATCA_HAL_I2C
 
 /** Use the following address for ECC devices */
-#define ATCA_I2C_ECC_ADDRESS    0x36  // ATECC608A-TFLXTLS address, SiFive HiFive1 RevB supports 7-bit only
-//#define ATCA_I2C_ECC_ADDRESS    0x60   // ATECC608A-MAHDA
+//#define ATCA_I2C_ECC_ADDRESS    0x6C  // ATECC608A-TFLXTLS address, SiFive HiFive1 RevB supports 7-bit only
+//#define ATCA_I2C_ECC_ADDRESS    0xC0   // ATECC608A-MAHDA
+//#define ATCA_I2C_ECC_ADDRESS    0x60  // ATECC608A-MAHDA locked address
+#define ATCA_I2C_ECC_ADDRESS    0x30  // ATECC608A-MAHDA locked address
+
   // used by pkcs11_slot_config() in vendors\microchip\secure_elements\lib\pkcs11\pkcs11_slot.c
   // used by pkcs11_token_init() in vendors\microchip\secure_elements\lib\pkcs11\pkcs11_token.c
 

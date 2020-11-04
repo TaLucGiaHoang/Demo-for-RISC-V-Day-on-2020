@@ -38,7 +38,7 @@
  *
  * @todo Set this to the unique name of your IoT Thing.
  */
-#define clientcredentialIOT_THING_NAME               "01237B025CA95B8F01"
+#define clientcredentialIOT_THING_NAME               "0123037304690601EE"
 
 /*
  * @brief Port number the MQTT broker is using.
