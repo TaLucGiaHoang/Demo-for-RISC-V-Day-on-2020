@@ -28,8 +28,8 @@ static uint16_t rx_buf_ridx, rx_buf_widx;
 
 static int uart1_receive_byte(void)
 {
-	while(!(DEV_UART1->LSR & 0x1)) {vTaskDelay(1);}
-	return DEV_UART1->RBR;
+    while(!(DEV_UART1->LSR & 0x1)) {vTaskDelay(1);}
+    return DEV_UART1->RBR;
 }
 
 
@@ -51,37 +51,35 @@ static int uart1_receive_byte(void)
 
 static void prvUartRxTask( void *pvParameters )
 {
-	/* Prevent the compiler warning about the unused parameter. */
-	( void ) pvParameters;
+    /* Prevent the compiler warning about the unused parameter. */
+    ( void ) pvParameters;
 
-	printf("%s[%d]\r\n", __func__, __LINE__);
-
-	int inited = 0;
+    int inited = 0;
 
     uint8_t ucDat;
-	for( ;; )
-	{
-//		if (RX_BUF_FULL()) {
+    for( ;; )
+    {
+//        if (RX_BUF_FULL()) {
 //            configPRINTF(("[%s] RX buffer full !!\n", __func__));
 //        }
-		ucDat = uart1_receive_byte();
-//		printf("%c", ucDat);
+        ucDat = uart1_receive_byte();
+//        printf("%c", ucDat);
 
-		if (inited || (ucDat != 0)) {
-			RX_BUF_PUSH(ucDat);
-			if (!inited) inited = 1;
-		}
+        if (inited || (ucDat != 0)) {
+            RX_BUF_PUSH(ucDat);
+            if (!inited) inited = 1;
+        }
 
-	}
+    }
 }
 
 uint16_t UART_Write(UART_T* uart , uint8_t pucTxBuf[], uint16_t usWriteBytes )
 {
-	for (uint16_t i = 0; i < usWriteBytes; i++)
-	{
-		uart_send_byte(uart, pucTxBuf[i]);
-	}
-	return usWriteBytes;
+    for (uint16_t i = 0; i < usWriteBytes; i++)
+    {
+        uart_send_byte(uart, pucTxBuf[i]);
+    }
+    return usWriteBytes;
 }
 
 void RX_BUF_PUSH(uint8_t d)
@@ -275,10 +273,10 @@ static void AT_ParseAccessPoint( ESP_WIFI_Object_t * pxObj, WIFIScanResult_t * p
  */
 BaseType_t ESP_Platform_Init( ESP_WIFI_Object_t * pxObj )
 {
-	*(unsigned int*)0xF0101004 |= 0xA0; // Change (IO2, IO3) pinmux from (GPIO18, GPIO19) to (UART1_RXD, UART1_TXD)
+    *(unsigned int*)0xF0101004 |= 0xA0; // Change (IO2, IO3) pinmux from (GPIO18, GPIO19) to (UART1_RXD, UART1_TXD)
 
-	uart_init(pxObj->Uart);
-	uart_set_baudrate(pxObj->Uart, pxObj->UartBaudRate);
+    uart_init(pxObj->Uart);
+    uart_set_baudrate(pxObj->Uart, pxObj->UartBaudRate);
 
     /* enable uart */
 //    UART_EnableInt(pxObj->Uart, UART_INTEN_RDAIEN_Msk | UART_INTEN_RXTOIEN_Msk | UART_INTEN_TOCNTEN_Msk);
@@ -447,9 +445,9 @@ ESP_WIFI_Status_t ESP_IO_Recv( ESP_WIFI_Object_t * pxObj, uint8_t pucRxBuf[], ui
             Nuvoton_debug_printf(("[%s] \"%s\", usCount = %d, xRet = %d\n", __func__, pucRxBuf, usCount, xRet));
         else {
             Nuvoton_debug_printf(("."));
-			 /* Release the CPU resource */
+             /* Release the CPU resource */
             vTaskDelay(1);
-		}
+        }
     } else
         Nuvoton_debug_printf(("[%s], usCount = %d, xRet = %d\n", __func__, usCount, xRet));
 
@@ -535,7 +533,7 @@ ESP_WIFI_Status_t ESP_WIFI_Init( ESP_WIFI_Object_t * pxObj )
     ESP_WIFI_Status_t xRet = ESP_WIFI_STATUS_ERROR;
 
     if (ESP_Platform_Init(pxObj) == pdTRUE) {
-    	xTaskCreate( prvUartRxTask, "UartRxTask", configMINIMAL_STACK_SIZE, NULL, ( tskIDLE_PRIORITY + 5 ), NULL );
+        xTaskCreate( prvUartRxTask, "UartRxTask", configMINIMAL_STACK_SIZE, NULL, ( tskIDLE_PRIORITY + 5 ), NULL );
 
         /* Reset the WiFi module */
         xRet = ESP_WIFI_Reset(pxObj);
@@ -595,11 +593,11 @@ ESP_WIFI_Status_t ESP_WIFI_Disconnect( ESP_WIFI_Object_t * pxObj )
 
 ESP_WIFI_Status_t ESP_WIFI_AT( ESP_WIFI_Object_t * pxObj )
 {
-	ESP_WIFI_Status_t xRet;
+    ESP_WIFI_Status_t xRet;
 
-	xRet = ESP_AT_Command(pxObj, (uint8_t *)"AT\r\n", 10);
+    xRet = ESP_AT_Command(pxObj, (uint8_t *)"AT\r\n", 10);
 
-	return xRet;
+    return xRet;
 }
 
 /**

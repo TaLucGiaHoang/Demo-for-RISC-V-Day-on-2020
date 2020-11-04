@@ -273,7 +273,7 @@ static void _mqttSubscriptionCallback( void * param1,
     	vLoggingPrintf("\r\nSwitch LED off\r\n");
     }
     control_led(pPayload[8]);
-
+#if 0
     /* Find the message number inside of the PUBLISH message. */
     for( messageNumberIndex = 0; messageNumberIndex < pPublish->u.message.info.payloadLength; messageNumberIndex++ )
     {
@@ -346,9 +346,9 @@ static void _mqttSubscriptionCallback( void * param1,
             }
         }
     }
-
+#endif
     /* Increment the number of PUBLISH messages received. */
-    IotSemaphore_Post( pPublishesReceived );
+//    IotSemaphore_Post( pPublishesReceived );
 }
 
 /*-----------------------------------------------------------*/
@@ -808,6 +808,8 @@ int RunMqttDemo( bool awsIotMqttMode,
                                        &publishesReceived );
     }
 
+    while (1) {vTaskDelay(1);}
+
     if( status == EXIT_SUCCESS )
     {
         /* Create the semaphore to count incoming PUBLISH messages. */
@@ -829,6 +831,8 @@ int RunMqttDemo( bool awsIotMqttMode,
             status = EXIT_FAILURE;
         }
     }
+
+    while (1) {vTaskDelay(1);}
 
     if( status == EXIT_SUCCESS )
     {

@@ -56,7 +56,6 @@ ATCA_STATUS atcab_genkey_base(uint8_t mode, uint16_t key_id, const uint8_t* othe
     ATCAPacket packet;
     ATCACommand ca_cmd = _gDevice->mCommands;
     ATCA_STATUS status = ATCA_GEN_FAIL;
-    vLoggingPrintf("    atcab_genkey_base mode=0x%x key_id=0x%x public_key=0x%x\r\n", mode, key_id, public_key);
     do
     {
         // Build GenKey command
@@ -69,13 +68,11 @@ ATCA_STATUS atcab_genkey_base(uint8_t mode, uint16_t key_id, const uint8_t* othe
 
         if ((status = atGenKey(ca_cmd, &packet)) != ATCA_SUCCESS)
         {
-        	vLoggingPrintf("    Error: atcab_genkey_base: atGenKey %x\r\n", status);
             break;
         }
 
         if ((status = atca_execute_command(&packet, _gDevice)) != ATCA_SUCCESS)
         {
-        	vLoggingPrintf("    Error: atcab_genkey_base: atca_execute_command %x\r\n", status);
             break;
         }
 
@@ -86,7 +83,6 @@ ATCA_STATUS atcab_genkey_base(uint8_t mode, uint16_t key_id, const uint8_t* othe
     }
     while (0);
 
-    vLoggingPrintf("    atcab_genkey_base: %x\r\n", status);
     return status;
 }
 

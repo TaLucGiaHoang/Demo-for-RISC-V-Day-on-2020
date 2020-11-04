@@ -113,7 +113,7 @@ WIFIReturnCode_t WIFI_ConnectAP( const WIFINetworkParams_t * const pxNetworkPara
         return xWiFiRet;
     }
 
-    configPRINTF(("current task name is \"%s\"\n", pcTaskGetName(xTaskGetCurrentTaskHandle())));
+    configPRINTF(("Current task name is \"%s\"\n", pcTaskGetName(xTaskGetCurrentTaskHandle())));
     if (xSemaphoreTake(xNuWiFi.xWifiSem, xSemaphoreWaitTicks) == pdTRUE) {
         /* Disconnect first if the network is connected */
         if (ESP_WIFI_IsConnected(&xNuWiFi.xWifiObject)) {

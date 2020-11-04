@@ -340,9 +340,8 @@ int32_t SOCKETS_Connect( Socket_t xSocket,
         xTLSParams.pxNetworkRecv = &(prvNetworkRecv);
         xTLSParams.pxNetworkSend = &(prvNetworkSend);
 
-        BaseType_t ret;
         /* Initialize TLS. */
-        if ((ret = TLS_Init(&(pxSecureSocket->pvTLSContext), &(xTLSParams))) == pdFREERTOS_ERRNO_NONE) {
+        if (TLS_Init(&(pxSecureSocket->pvTLSContext), &(xTLSParams)) == pdFREERTOS_ERRNO_NONE) {
             /* Initiate TLS handshake. */
             if (TLS_Connect(pxSecureSocket->pvTLSContext) != pdFREERTOS_ERRNO_NONE) {
                 /* TLS handshake failed. */
@@ -352,7 +351,6 @@ int32_t SOCKETS_Connect( Socket_t xSocket,
             /* TLS Initialization failed. */
             lSocketRet = SOCKETS_TLS_INIT_ERROR;
         }
-        configPRINTF(("%s[%d]: Ret %02x\r\n", __func__, __LINE__, ret));
     }
 
     return lSocketRet;

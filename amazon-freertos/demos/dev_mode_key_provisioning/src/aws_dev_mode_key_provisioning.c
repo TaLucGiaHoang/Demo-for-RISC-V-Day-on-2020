@@ -614,7 +614,6 @@ CK_RV xProvisionGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
-    vLoggingPrintf("    pxFunctionList->C_GenerateKeyPair...\r\n");
     xResult = pxFunctionList->C_GenerateKeyPair( xSession,
                                                  &xMechanism,
                                                  xPublicKeyTemplate,
@@ -622,7 +621,6 @@ CK_RV xProvisionGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
                                                  xPrivateKeyTemplate, sizeof( xPrivateKeyTemplate ) / sizeof( CK_ATTRIBUTE ),
                                                  pxPublicKeyHandle,
                                                  pxPrivateKeyHandle );
-    vLoggingPrintf("    pxFunctionList->C_GenerateKeyPair %x\r\n", xResult);
 
     return xResult;
 }
@@ -1033,7 +1031,7 @@ static void prvWriteHexBytesToConsole( char * pcDescription,
 
     /* Write help text to the console. */
     configPRINTF( ( "%s, %d bytes:\r\n", pcDescription, ulDataLength ) );
-vTaskDelay(500); // shc added
+
     /* Iterate over the bytes of the encoded public key. */
     for( ; ulIndex < ulDataLength; ulIndex++ )
     {
@@ -1116,7 +1114,6 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
                                          pxParams->ulClientCertificateLength,
                                          ( uint8_t * ) pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS,
                                          &xObject );
-        vLoggingPrintf("  xProvisionCertificate %x\r\n", xResult);
 
         if( ( xResult != CKR_OK ) || ( xObject == CK_INVALID_HANDLE ) )
         {
@@ -1174,7 +1171,6 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
     {
         xResult = prvGetProvisionedState( xSession,
                                           &xProvisionedState );
-        vLoggingPrintf("  prvGetProvisionedState %x\r\n", xResult);
 
         if( ( CK_INVALID_HANDLE == xProvisionedState.xPrivateKey ) ||
             ( CK_INVALID_HANDLE == xProvisionedState.xPublicKey ) ||
@@ -1196,13 +1192,11 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
     if( ( xResult == CKR_OK ) && ( CK_TRUE == xKeyPairGenerationMode ) )
     {
         /* Generate a new default key pair. */
-    	vLoggingPrintf("  xProvisionGenerateKeyPairEC...\r\n");
         xResult = xProvisionGenerateKeyPairEC( xSession,
                                                ( uint8_t * ) pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS,
                                                ( uint8_t * ) pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS,
                                                &xProvisionedState.xPrivateKey,
                                                &xProvisionedState.xPublicKey );
-        vLoggingPrintf("  xProvisionGenerateKeyPairEC: %x\r\n", xResult);
 
         if( CKR_OK == xResult )
         {
@@ -1214,7 +1208,6 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
             }
 
             /* Get the bytes of the new public key. */
-            vLoggingPrintf("  prvExportPublicKey\r\n", xResult);
             prvExportPublicKey( xSession,
                                 xProvisionedState.xPublicKey,
                                 &xProvisionedState.pucDerPublicKey,
@@ -1228,7 +1221,6 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
               ( CK_INVALID_HANDLE == xProvisionedState.xPublicKey ) ) )
         {
             xResult = CKR_KEY_HANDLE_INVALID;
-            vLoggingPrintf("aws_dev_mode_key_ %d: CKR_KEY_HANDLE_INVALID\r\n", __LINE__);
         }
     }
 
@@ -1294,15 +1286,12 @@ CK_RV xInitializePkcs11Token()
 
     if( xResult == CKR_OK )
     {
-    	vLoggingPrintf("  xInitializePKCS11...\r\n");
         xResult = xInitializePKCS11();
-        vLoggingPrintf("  xInitializePKCS11 %x\r\n", xResult);
     }
 
     if( ( xResult == CKR_OK ) || ( xResult == CKR_CRYPTOKI_ALREADY_INITIALIZED ) )
     {
         xResult = xGetSlotList( &pxSlotId, &xSlotCount );
-        vLoggingPrintf("  xGetSlotList %x, pxSlotId=0x%x, xSlotCount=%d\r\n", xResult, pxSlotId[0], xSlotCount);
     }
 
     if( xResult == CKR_OK )
@@ -1318,7 +1307,6 @@ CK_RV xInitializePkcs11Token()
              * TODO: Consider a define here instead.
              */
             xResult = pxFunctionList->C_GetTokenInfo( pxSlotId[ 0 ], pxTokenInfo );
-            vLoggingPrintf("  pxFunctionList->C_GetTokenInfo %x\r\n", xResult);
         }
         else
         {
@@ -1331,16 +1319,13 @@ CK_RV xInitializePkcs11Token()
         xTokenFlags = pxTokenInfo->flags;
     }
 
-    vLoggingPrintf("  check xTokenFlags=0x%x (CKF_TOKEN_INITIALIZED=0x400)\r\n", pxTokenInfo->flags);
     if( ( CKR_OK == xResult ) && !( CKF_TOKEN_INITIALIZED & xTokenFlags ) )
     {
         /* Initialize the token if it is not already. */
-    	vLoggingPrintf("  pxFunctionList->C_InitToken...\r\n");
         xResult = pxFunctionList->C_InitToken( pxSlotId[ 0 ],
                                                ( CK_UTF8CHAR_PTR ) configPKCS11_DEFAULT_USER_PIN,
                                                sizeof( configPKCS11_DEFAULT_USER_PIN ) - 1,
                                                ( CK_UTF8CHAR_PTR ) "FreeRTOS" );
-        vLoggingPrintf("  pxFunctionList->C_InitToken %x, pxSlotId=0x%x\r\n", xResult, pxSlotId[0]);
     }
 
     if( pxTokenInfo != NULL )
@@ -1370,30 +1355,22 @@ void vAlternateKeyProvisioning( ProvisioningParams_t * xParams )
     /* Initialize the PKCS Module */
     if( xResult == CKR_OK )
     {
-    	vLoggingPrintf("xInitializePkcs11Token...\r\n");
         xResult = xInitializePkcs11Token();
-        vLoggingPrintf("xInitializePkcs11Token %x\r\n", xResult);
     }
 
     if( xResult == CKR_OK )
     {
-    	vLoggingPrintf("xInitializePkcs11Session...\r\n");
         xResult = xInitializePkcs11Session( &xSession );
-        vLoggingPrintf("xInitializePkcs11Session %x\r\n", xResult);
     }
 
     if( xResult == CKR_OK )
     {
-        // #if ( pkcs11configIMPORT_PRIVATE_KEYS_SUPPORTED == 1 )
-            // xDestroyCredentials( xSession );
-        // #endif
-    	vLoggingPrintf("xProvisionDevice...\r\n");
         xResult = xProvisionDevice( xSession, xParams );
-        vLoggingPrintf("xProvisionDevice %x\r\n", xResult);
 
         pxFunctionList->C_CloseSession( xSession );
     }
-    vLoggingPrintf("vAlternateKeyProvisioning done\r\n");
+
+    return xResult;
 }
 /*-----------------------------------------------------------*/
 

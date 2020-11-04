@@ -165,7 +165,6 @@ CK_RV xInitializePkcs11Session( CK_SESSION_HANDLE * pxSession )
     if( xResult == CKR_OK )
     {
         xResult = xGetSlotList( &pxSlotId, &xSlotCount );
-        vLoggingPrintf("  xGetSlotList %x, xSlotCount=%d\r\n", xResult, xSlotCount);
     }
 
     /* Open a PKCS #11 session. */
@@ -175,9 +174,7 @@ CK_RV xInitializePkcs11Session( CK_SESSION_HANDLE * pxSession )
          * If your application has multiple slots, insert logic
          * for selecting an appropriate slot here.
          */
-        vLoggingPrintf("  prvOpenSession pxSlotId[0]\r\n", xResult);
         xResult = prvOpenSession( pxSession, pxSlotId[ 0 ] );
-        vLoggingPrintf("  prvOpenSession %x\r\n", xResult);
 
         /* Free the memory allocated by xGetSlotList. */
         vPortFree( pxSlotId );
@@ -185,13 +182,10 @@ CK_RV xInitializePkcs11Session( CK_SESSION_HANDLE * pxSession )
 
     if( ( xResult == CKR_OK ) && ( pxFunctionList->C_Login != NULL ) )
     {
-        vLoggingPrintf("  pxFunctionList->C_Login... 0x%x, 0x%x, 0x%x, %d\r\n", *pxSession, CKU_USER, ( CK_UTF8CHAR_PTR ) configPKCS11_DEFAULT_USER_PIN,
-                        sizeof( configPKCS11_DEFAULT_USER_PIN ) - 1);
         xResult = pxFunctionList->C_Login( *pxSession,
                                            CKU_USER,
                                            ( CK_UTF8CHAR_PTR ) configPKCS11_DEFAULT_USER_PIN,
                                            sizeof( configPKCS11_DEFAULT_USER_PIN ) - 1 );
-        vLoggingPrintf("  pxFunctionList->C_Login %x\r\n", xResult);
     }
 
     return xResult;
