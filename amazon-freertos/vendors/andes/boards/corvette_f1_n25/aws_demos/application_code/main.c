@@ -344,17 +344,34 @@ void testATCA( void )
 #endif
 
 }
+
+static void test_control_led(void)
+{
+	vLoggingPrintf("Run test_control_led: Blink LED1 10 times\r\n");
+    extern int control_led(char c);
+
+    for(int i = 0; i < 10; i++)
+    {
+        if(control_led('1') != 0)
+    	{
+    		vLoggingPrintf("control_led('1') error\r\n");
+    	}
+        vTaskDelay(500);
+
+        if(control_led('0') != 0)
+        {
+        	vLoggingPrintf("control_led('0') error\r\n");
+        }
+        vTaskDelay(500);
+    }
+    vLoggingPrintf("Run test_control_led done\r\n");
+}
 /*-----------------------------------------------------------*/
 /**
  * @brief Application runtime entry point.
  */
 int main( void )
 {
-	 DEV_GPIO->CHANNELDIR |= 0x1E0;                // Set GPIO5~8 direction to output mode.
-	 DEV_GPIO->DATAOUT = (1 << 5);                    // Light up LED1
-	 DEV_GPIO->DATAOUT = (1 << 8) | (1 << 5);    // Light up LED1 and LED4
-	 DEV_GPIO->DATAOUT |= (1 << 6) | (1 << 7);    // Light up LED1 and LED4
-
    /* Perform any hardware initialization that does not require the RTOS to be
     * running.  */
    prvMiscInitialization();
@@ -403,8 +420,9 @@ void vApplicationDaemonTaskStartupHook( void )
          * microcontroller flash using PKCS#11 interface. This should be replaced
          * by production ready key provisioning mechanism. */
         vDevModeKeyProvisioning();
-//
+
 //    	testATCA(); // SHC test atecc608a lib
+//    	test_control_led(); // SHC test LEDs
         /* Start the demo tasks. */
         DEMO_RUNNER_RunDemos();
     }
@@ -641,5 +659,7 @@ static void prvSetupHardware( void )
 //	uart_init(DEV_UART1);
 //	uart_set_baudrate(DEV_UART1, 115200);
 
-
+    /* Hardware initialize for LEDs */
+    extern void control_led_init(void);
+    control_led_init();
 }
