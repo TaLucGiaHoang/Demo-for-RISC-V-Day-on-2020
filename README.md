@@ -1,15 +1,11 @@
 # 20_Demo-for-RISC-V-Day-on-2020
 
 ## Branches information
-master --> )
-Update_OTA --> Fully tested released source code
-## Important branches to know
-master            --> Basic Amazon FreeRTOS demo `aws_demo` for Andes Corvette-F1 board with hardware security (ATECC608A device)  
-Update_OTA           --> Developing bootloader demo for supporting Update OTA  
-
+`master`            --> Basic Amazon FreeRTOS demo `aws_demo` for Andes Corvette-F1 board with hardware security (ATECC608A device)  
+`Update_OTA`        --> Developing bootloader demo for supporting Update OTA  
 
 ## Setup environment
-For more detail of guideline please read (Getting Started with the Andes Corvette-F1 N25)[https://github.com/andestech/amazon-freertos/blob/master/vendors/andes/boards/corvette_f1_n25/Getting_Started_Guide_Corvette-F1_N25.md] or read **Getting_Started_Guide_Corvette-F1_N25.pdf** in `amazon-freertos/vendors/andes/boards/corvette_f1_n25/` directory 
+For more detail of guideline please read [Getting Started with the Andes Corvette-F1 N25](https://github.com/andestech/amazon-freertos/blob/master/vendors/andes/boards/corvette_f1_n25/Getting_Started_Guide_Corvette-F1_N25.md) or read **Getting_Started_Guide_Corvette-F1_N25.pdf** in `amazon-freertos/vendors/andes/boards/corvette_f1_n25/` directory 
 
 ### Clone repository
 ```
@@ -95,4 +91,4 @@ Download scripts from https://github.com/aws/amazon-freertos/tree/master/vendors
 ### For more information read
 - [Getting started with the Microchip ATECC608A Secure Element with Windows simulator](https://docs.aws.amazon.com/freertos/latest/userguide/getting_started_atecc608a.html)
 - [Developer-mode key provisioning](https://docs.aws.amazon.com/freertos/latest/userguide/dev-mode-key-provisioning.html)
-AWS CLI configuration  https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html
+- [AWS CLI configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
