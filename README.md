@@ -37,9 +37,10 @@ $ cd <aws_development_tools>/windows/toolchain
 $ tar xvf nds32le-elf-newlib-v5.txz
 ```
 
-Add Cygwin and toolchain to `PATH` environment variables
-<aws_development_tools>\windows\Cygwin\Cygwin
-<aws_development_tools>\windows\toolchain\nds32le-elf-newlib-v5\bin
+Add Cygwin and toolchain location to `PATH` environment variables
+
+    <aws_development_tools>\windows\Cygwin\Cygwin
+    <aws_development_tools>\windows\toolchain\nds32le-elf-newlib-v5\bin
 
 If you are using the Windows operating system, CMake is ready-to-use in the
 Cygwin you downloaded.
@@ -57,6 +58,7 @@ Then change directory to amazon-freertos root source to create `Makefile` file a
 The binary `aws_demos.bin` will be generated in the directory `<amazon-freertos>/build/`.
 
 ### UART Serial Connection
+Connect the CON2 (UART) port on the Corvette-F1 N25 Development Board to a USB port on your computer using a micro USB cable.
 
 	+ BAUD rate: 115200
 	+ Data: 8 bit 
@@ -78,8 +80,7 @@ Then, open the second Cygwin terminal and issue the following commands to burn b
 
 You can also directly use this command to burn onto flash
     
-    $ ./windows_burner_tools/target_burn_frontend --erase-all --verify -P 4444 --algorithm-bin=./target_bin/target_SPI_v5_3
-2.bin --image=<amazon-freertos>/build/aws_demos.bin
+    $ ./windows_burner_tools/target_burn_frontend --erase-all --verify -P 4444 --algorithm-bin=./target_bin/target_SPI_v5_32.bin --image=<amazon-freertos>/build/aws_demos.bin
 
 >**NOTE**<br>
 >Be sure to keep ICEman running when you are debugging or burning a flash.
